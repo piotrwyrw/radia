@@ -16,7 +16,7 @@ func (sky *Sky) SkyColor(direction *math.Vec3d) color.Color {
 	d := direction.Copy()
 	d.Normalize()
 
-	azimuth := math2.Atan2(d.Z, d.X) + math2.Pi*3.5
+	azimuth := math2.Atan2(d.Z, d.X) + math2.Pi*3
 	for azimuth > math2.Pi {
 		azimuth -= 2 * math2.Pi
 	}

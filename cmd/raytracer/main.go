@@ -26,14 +26,14 @@ func main() {
 	var objects []scene.Shape = []scene.Shape{
 		// Ground plane
 		&geometry.Sphere{
-			Center:   math.Vec3d{X: 0.0, Y: -1000.0, Z: 0.0},
-			Radius:   1000.0,
-			Material: material.NewUniversalMaterial(color.ColorWhite(), color.ColorBlack(), 0.0, 2.0),
+			Center:   math.Vec3d{X: 0.0, Y: -10000.0, Z: 0.0},
+			Radius:   10000.0,
+			Material: material.NewUniversalMaterial(color.ColorWhite(), color.ColorBlack(), 0.0, 0.1),
 		},
 	}
 
 	// Generate random balls
-	for i := 0; i < 150; i++ {
+	for i := 0; i < 250; i++ {
 		angle := rand.Float64() * 2 * math2.Pi
 		distance := rand.Float64()*2 + 1
 

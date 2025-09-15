@@ -9,7 +9,6 @@ import (
 	"raytracer/internal/rt/scene"
 	"raytracer/internal/rt/tracer"
 	"sync"
-	"time"
 
 	"github.com/veandco/go-sdl2/sdl"
 )
@@ -32,8 +31,16 @@ func StartRaytracer(width, height int32, scene *scene.Scene) error {
 	go func(ctx *context.Context) {
 		var samples int32
 		for {
-			start := time.Now()
-			tracer.TraceAllRays(scene, back, 100)
+			//start := time.Now()
+			tracer.TraceAllRays(scene, back, 5, 100, func(x, y, n int32) {
+				totalPixels := float64(width * height)
+				progress := (float64(n) / totalPixels) * 100.0
+				if !titleMutex.TryLock() {
+					return
+				}
+				title = fmt.Sprintf("Rendering (%.2f%c)", progress, '%')
+				titleMutex.Unlock()
+			})
 			back.Save(fmt.Sprintf("frames/frame-%d.ppm", samples))
 			samples++
 
@@ -46,11 +53,7 @@ func StartRaytracer(width, height int32, scene *scene.Scene) error {
 			bufMutex.Unlock()
 
 			// Update FPS in the title
-			duration := float64(time.Since(start).Milliseconds())
-			if titleMutex.TryLock() {
-				title = fmt.Sprintf("Raytracer (%.1f FPS)", 1000.0/duration)
-				titleMutex.Unlock()
-			}
+			//duration := float64(time.Since(start).Milliseconds())
 		}
 	}(ctx)
 
