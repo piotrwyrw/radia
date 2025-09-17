@@ -9,7 +9,7 @@ import (
 type Scene struct {
 	Objects  []Shape
 	Camera   Camera
-	WorldMat EnvironmentMaterial
+	WorldMat EnvironmentMaterialWrapper
 }
 
 func (s *Scene) SaveJSON(path string) error {

@@ -15,20 +15,39 @@ const (
 
 type GenericMaterial interface {
 	Identifier() string
-	Type() MaterialType
 }
 
 type ShapeMaterial interface {
 	Scatter(incoming *rmath.Ray, intersection *Intersection) (scattered *rmath.Ray, attenuation rcolor.Color)
 	Emitted(intersection *Intersection) rcolor.Color
-
 	Identifier() string
-	Type() MaterialType
+}
+
+type ShapeMaterialWrapper struct {
+	Identifier string
+	Material   ShapeMaterial
+}
+
+func WrapShapeMaterial(material ShapeMaterial) ShapeMaterialWrapper {
+	return ShapeMaterialWrapper{
+		Identifier: material.Identifier(),
+		Material:   material,
+	}
 }
 
 type EnvironmentMaterial interface {
 	SkyColor(direction *rmath2.Vec3d) rcolor.Color
-
 	Identifier() string
-	Type() MaterialType
+}
+
+type EnvironmentMaterialWrapper struct {
+	Identifier string
+	Material   EnvironmentMaterial
+}
+
+func WrapEnvironmentMaterial(material EnvironmentMaterial) EnvironmentMaterialWrapper {
+	return EnvironmentMaterialWrapper{
+		Identifier: material.Identifier(),
+		Material:   material,
+	}
 }

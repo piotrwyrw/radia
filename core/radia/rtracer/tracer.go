@@ -83,10 +83,10 @@ func TraceRay(origin rmath.Vec3d, direction rmath.Vec3d, s *rscene.Scene, bounce
 	}
 
 	if distance == math2.Inf(1) || intersection == nil {
-		return s.WorldMat.SkyColor(&direction)
+		return s.WorldMat.Material.SkyColor(&direction)
 	}
 
-	mat := intersection.Object.GetMaterial()
+	mat := intersection.Object.GetMaterial().Material
 
 	clr := mat.Emitted(intersection)
 	scatter, attenuation := mat.Scatter(&ray, intersection)

@@ -3,7 +3,6 @@ package radia
 import (
 	"fmt"
 
-	"fyne.io/fyne/v2"
 	"github.com/piotrwyrw/otherproj/internal/context"
 	"github.com/piotrwyrw/otherproj/internal/util"
 	"github.com/piotrwyrw/radia/radia/rcolor"
@@ -28,16 +27,18 @@ func InvokeRenderer(ctx *context.Context, imageWidth int32, imageHeight int32) {
 		return
 	}
 
+	mat := rmaterial.UniversalMaterial{
+		Color:     rcolor.Color{R: 1.0, G: 0.5, B: 0.5},
+		Emission:  rcolor.ColorBlack(),
+		Roughness: 0.5,
+	}
+
 	scene := rscene.Scene{
 		Objects: []rscene.Shape{
 			&rgeom.Sphere{
-				Center: rmath.Vec3d{X: 0.0, Y: 0.0, Z: 2.0},
-				Radius: 0.3,
-				Material: &rmaterial.UniversalMaterial{
-					Color:     rcolor.Color{R: 1.0, G: 0.5, B: 0.5},
-					Emission:  rcolor.ColorBlack(),
-					Roughness: 0.5,
-				},
+				Center:   rmath.Vec3d{X: 0.0, Y: 0.0, Z: 2.0},
+				Radius:   0.3,
+				Material: rscene.WrapShapeMaterial(&mat),
 			},
 		},
 		Camera: rscene.Camera{
@@ -45,11 +46,11 @@ func InvokeRenderer(ctx *context.Context, imageWidth int32, imageHeight int32) {
 			Facing:      rmath.Vec3d{X: 0.0, Y: 0.0, Z: 1.0},
 			FocalLength: 1.5,
 		},
-		WorldMat: &rworld.Sky{
+		WorldMat: rscene.WrapEnvironmentMaterial(&rworld.Sky{
 			Image:         env,
 			IOR:           1.0,
 			FallbackColor: rcolor.ColorBlack(),
-		},
+		}),
 	}
 
 	_ = scene.SaveJSON("scene_js.json")
@@ -63,12 +64,8 @@ func InvokeRenderer(ctx *context.Context, imageWidth int32, imageHeight int32) {
 
 	util.UpdateFyneImageWithRaster(destination, ctx.RenderOutputBuffer)
 
-	fmt.Println("LOREM IPSUM")
-	fyne.Do(func() {
-		fmt.Println("Do Function")
-		ctx.StatusText.Set("Ready")
-		ctx.RenderOutputImage.Refresh()
-	})
+	ctx.StatusText.Set("Ready")
+	ctx.RenderOutputImage.Refresh()
 
 	ctx.IsRendering = false
 	ctx.RenderProgress.Set(0.0)

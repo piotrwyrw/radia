@@ -25,7 +25,3 @@ func (e *GlassMaterial) Emitted(intersection *rscene.Intersection) rcolor.Color 
 func (e *GlassMaterial) Identifier() string {
 	return "RadiaGlassMaterial"
 }
-
-func (e *GlassMaterial) Type() rscene.MaterialType {
-	return rscene.ShapeMaterialType
-}

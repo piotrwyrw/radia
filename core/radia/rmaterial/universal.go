@@ -48,7 +48,3 @@ func (e *UniversalMaterial) Emitted(intersection *rscene.Intersection) rcolor.Co
 func (e *UniversalMaterial) Identifier() string {
 	return "RadiaUniversalMaterial"
 }
-
-func (e *UniversalMaterial) Type() rscene.MaterialType {
-	return rscene.ShapeMaterialType
-}

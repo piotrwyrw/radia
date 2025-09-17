@@ -7,7 +7,6 @@ import (
 	"github.com/piotrwyrw/radia/radia/rcolor"
 	"github.com/piotrwyrw/radia/radia/rimg"
 	"github.com/piotrwyrw/radia/radia/rmath"
-	"github.com/piotrwyrw/radia/radia/rscene"
 )
 
 type Sky struct {
@@ -47,8 +46,4 @@ func (sky *Sky) SkyColor(direction *rmath.Vec3d) rcolor.Color {
 
 func (sky *Sky) Identifier() string {
 	return "RadiaSky"
-}
-
-func (sky *Sky) Type() rscene.MaterialType {
-	return rscene.EnvironmentMaterialType
 }

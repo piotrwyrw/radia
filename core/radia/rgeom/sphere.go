@@ -11,7 +11,7 @@ import (
 type Sphere struct {
 	Center   rmath.Vec3d
 	Radius   float64
-	Material rscene.ShapeMaterial
+	Material rscene.ShapeMaterialWrapper
 }
 
 func (s *Sphere) Hit(ray *rmath2.Ray) *rscene.Intersection {
@@ -71,6 +71,6 @@ func (s *Sphere) Reflect(intersection *rscene.Intersection) rmath.Vec3d {
 	return reflected
 }
 
-func (s *Sphere) GetMaterial() rscene.ShapeMaterial {
+func (s *Sphere) GetMaterial() rscene.ShapeMaterialWrapper {
 	return s.Material
 }
