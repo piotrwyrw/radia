@@ -4,14 +4,13 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/piotrwyrw/radia/radia/rimg"
 	"github.com/piotrwyrw/radia/radia/rmaterial"
 	"github.com/piotrwyrw/radia/radia/robject"
 	"github.com/piotrwyrw/radia/radia/rshapes"
 	"github.com/piotrwyrw/radia/radia/rtypes"
 )
 
-func unmarshalShapeWrapper(data []byte, dst *rtypes.ShapeWrapper) error {
+func parseShapeWrapper(data []byte, dst *rtypes.ShapeWrapper, registry *rmaterial.MaterialRegistry) error {
 	var aux struct {
 		Type   string          `json:"type"`
 		Object json.RawMessage `json:"object"`
@@ -27,7 +26,9 @@ func unmarshalShapeWrapper(data []byte, dst *rtypes.ShapeWrapper) error {
 	switch aux.Type {
 	case rtypes.ShapeIdentifierSphere:
 		var sphere rshapes.Sphere
-		err = sphere.Unmarshal(aux.Object, unmarshalShapeMaterialWrapper)
+		err = sphere.Unmarshal(aux.Object, func(data []byte, dst *rtypes.ShapeMaterialWrapper) error {
+			return parseShapeMaterialWrapper(data, dst, registry)
+		})
 		dst.Object = &sphere
 		break
 	default:
@@ -41,7 +42,7 @@ func unmarshalShapeWrapper(data []byte, dst *rtypes.ShapeWrapper) error {
 	return nil
 }
 
-func unmarshalShapeMaterialWrapper(data []byte, dst *rtypes.ShapeMaterialWrapper) error {
+func parseShapeMaterialWrapper(data []byte, dst *rtypes.ShapeMaterialWrapper, registry *rmaterial.MaterialRegistry) error {
 	var aux struct {
 		Type     string          `json:"type"`
 		Name     string          `json:"name"`
@@ -57,23 +58,15 @@ func unmarshalShapeMaterialWrapper(data []byte, dst *rtypes.ShapeMaterialWrapper
 		return fmt.Errorf("expected to parse shape material, got %s", aux.Type)
 	}
 
-	var mat rtypes.ShapeMaterial
-
-	switch aux.Name {
-	case rtypes.GlassMaterialIdentifier:
-		var glass rmaterial.GlassMaterial
-		err = json.Unmarshal(aux.Material, &glass)
-		mat = &glass
-		break
-	case rtypes.UniversalMaterialIdentifier:
-		var universal rmaterial.UniversalMaterial
-		err = json.Unmarshal(aux.Material, &universal)
-		mat = &universal
-		break
-	default:
-		return fmt.Errorf("unknown shape material %s", aux.Type)
+	if !registry.HasShape(aux.Name) {
+		return fmt.Errorf("shape material \"%s\" not found in registry", aux.Name)
 	}
 
+	mat, err := registry.InstantiateShapeMaterial(aux.Name)
+	if err != nil {
+		return err
+	}
+	err = mat.Unmarshal(aux.Material)
 	if err != nil {
 		return err
 	}
@@ -83,7 +76,7 @@ func unmarshalShapeMaterialWrapper(data []byte, dst *rtypes.ShapeMaterialWrapper
 	return nil
 }
 
-func unmarshalEnvironmentMaterialWrapper(data []byte, dst *rtypes.EnvironmentMaterialWrapper) error {
+func parseEnvironmentMaterialWrapper(data []byte, dst *rtypes.EnvironmentMaterialWrapper, registry *rmaterial.MaterialRegistry) error {
 	var aux struct {
 		Type     string          `json:"type"`
 		Name     string          `json:"name"`
@@ -99,29 +92,16 @@ func unmarshalEnvironmentMaterialWrapper(data []byte, dst *rtypes.EnvironmentMat
 		return fmt.Errorf("expected to parse environment material, got %s", aux.Type)
 	}
 
-	var mat rtypes.EnvironmentMaterial
-
-	switch aux.Name {
-	case rtypes.SkyMaterialIdentifier:
-		var sky rmaterial.Sky
-		err = json.Unmarshal(aux.Material, &sky)
-		if err != nil {
-			break
-		}
-		if sky.Image == nil {
-			return fmt.Errorf("sky material image is missing")
-		}
-		imgSrc := sky.Image.Source
-		sky.Image, err = rimg.RasterFromPNG(imgSrc)
-		if err != nil {
-			break
-		}
-		mat = &sky
-		break
-	default:
-		return fmt.Errorf("unknown environment material %s", aux.Type)
+	if !registry.HasEnvironment(aux.Name) {
+		return fmt.Errorf("environment material \"%s\" not found in registry", aux.Name)
 	}
 
+	mat, err := registry.InstantiateEnvironmentMaterial(aux.Name)
+
+	if err != nil {
+		return err
+	}
+	err = mat.Unmarshal(aux.Material)
 	if err != nil {
 		return err
 	}
@@ -131,7 +111,7 @@ func unmarshalEnvironmentMaterialWrapper(data []byte, dst *rtypes.EnvironmentMat
 	return nil
 }
 
-func UnmarshalScene(data []byte) (*rtypes.Scene, error) {
+func ParseScene(data []byte, registry *rmaterial.MaterialRegistry) (*rtypes.Scene, error) {
 	var aux struct {
 		Metadata rtypes.SceneMetadata `json:"metadata"`
 		Objects  []json.RawMessage    `json:"objects"`
@@ -148,7 +128,7 @@ func UnmarshalScene(data []byte) (*rtypes.Scene, error) {
 	scene.Camera = aux.Camera
 
 	// Parse world material
-	err = unmarshalEnvironmentMaterialWrapper(aux.WorldMat, &scene.WorldMat)
+	err = parseEnvironmentMaterialWrapper(aux.WorldMat, &scene.WorldMat, registry)
 	if err != nil {
 		return nil, err
 	}
@@ -156,7 +136,7 @@ func UnmarshalScene(data []byte) (*rtypes.Scene, error) {
 	// Parse scene objects
 	for _, object := range aux.Objects {
 		var shape rtypes.ShapeWrapper
-		err = unmarshalShapeWrapper(object, &shape)
+		err = parseShapeWrapper(object, &shape, registry)
 		if err != nil {
 			return nil, err
 		}

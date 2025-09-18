@@ -1,10 +1,9 @@
 package radia
 
 import (
-	"fmt"
-
 	"github.com/piotrwyrw/otherproj/internal/context"
 	"github.com/piotrwyrw/otherproj/internal/util"
+	"github.com/piotrwyrw/radia/radia/radia"
 	"github.com/piotrwyrw/radia/radia/rcolor"
 	"github.com/piotrwyrw/radia/radia/rimg"
 	"github.com/piotrwyrw/radia/radia/rmaterial"
@@ -14,6 +13,7 @@ import (
 	"github.com/piotrwyrw/radia/radia/rshapes"
 	"github.com/piotrwyrw/radia/radia/rtracer"
 	"github.com/piotrwyrw/radia/radia/rtypes"
+	"github.com/sirupsen/logrus"
 )
 
 func InvokeRenderer(ctx *context.Context, imageWidth int32, imageHeight int32) {
@@ -23,18 +23,24 @@ func InvokeRenderer(ctx *context.Context, imageWidth int32, imageHeight int32) {
 
 	env, err := rimg.RasterFromPNG("world.png")
 	if err != nil {
-		fmt.Printf("Could not render: %v\n", err)
+		logrus.Errorf("Could not render: %v\n", err)
 		ctx.IsRendering = false
 		return
 	}
 
-	mat := rmaterial.UniversalMaterial{
-		Color:     rcolor.Color{R: 1.0, G: 0.5, B: 0.5},
-		Emission:  rcolor.ColorBlack(),
-		Roughness: 0.5,
+	radia.Initialize()
+
+	//mat := rmaterial.UniversalMaterial{
+	//	Color:     rcolor.Color{R: 1.0, G: 0.5, B: 0.5},
+	//	Emission:  rcolor.ColorBlack(),
+	//	Roughness: 1.0,
+	//}
+
+	mat := rmaterial.GlassMaterial{
+		IOR: 1.0,
 	}
 
-	scene := rtypes.Scene{
+	scene := &rtypes.Scene{
 		Objects: []rtypes.ShapeWrapper{
 			robject.WrapShape(&rshapes.Sphere{
 				Center:   rmath.Vec3d{X: 0.0, Y: 0.0, Z: 2.0},
@@ -54,15 +60,15 @@ func InvokeRenderer(ctx *context.Context, imageWidth int32, imageHeight int32) {
 		}),
 	}
 
-	_ = rscene.SaveSceneJSON(&scene, "scene_js.json")
+	_ = rscene.SaveSceneJSON(scene, "scene_js.json")
 	_, err = rscene.LoadSceneJSON("scene_js.json")
 	if err != nil {
-		fmt.Printf("Could not load scene json: %v\n", err)
+		logrus.Errorf("Could not load scene json: %v\n", err)
 	}
 
 	destination := rimg.NewRaster(imageWidth, imageHeight)
 
-	rtracer.TraceAllRays(&scene, destination, 10, 10, func(x, y, n int32) {
+	rtracer.TraceAllRays(scene, destination, 100, 100, func(x, y, n int32) {
 		progress := float64(n) / float64(imageWidth*imageHeight)
 		ctx.RenderProgress.Set(progress)
 	})

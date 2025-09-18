@@ -5,8 +5,10 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/piotrwyrw/radia/radia/rmaterial"
 	"github.com/piotrwyrw/radia/radia/rparser"
 	"github.com/piotrwyrw/radia/radia/rtypes"
+	"github.com/sirupsen/logrus"
 )
 
 func SaveSceneJSON(s *rtypes.Scene, path string) error {
@@ -31,11 +33,12 @@ func SaveSceneJSON(s *rtypes.Scene, path string) error {
 }
 
 func LoadSceneJSON(path string) (*rtypes.Scene, error) {
+	logrus.Debugf("Loading scene file \"%s\"\n", path)
 	data, err := os.ReadFile(path)
 	if err != nil {
 		return nil, err
 	}
-	scene, err := rparser.UnmarshalScene(data)
+	scene, err := rparser.ParseScene(data, rmaterial.GetMaterialRegistry())
 	if err != nil {
 		return nil, err
 	}

@@ -20,10 +20,7 @@ type ShapeMaterial interface {
 	Scatter(incoming *rmath2.Ray, intersection *Intersection) (scattered *rmath2.Ray, attenuation rcolor.Color)
 	Emitted(intersection *Intersection) rcolor.Color
 	Identifier() string
-}
-
-type GenericMaterialWrapper interface {
-	ShapeMaterialWrapper | EnvironmentMaterialWrapper
+	Unmarshal(data []byte) error
 }
 
 type ShapeMaterialWrapper struct {
@@ -35,6 +32,7 @@ type ShapeMaterialWrapper struct {
 type EnvironmentMaterial interface {
 	SkyColor(direction *rmath2.Vec3d) rcolor.Color
 	Identifier() string
+	Unmarshal(data []byte) error
 }
 
 type EnvironmentMaterialWrapper struct {

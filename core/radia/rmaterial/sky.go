@@ -1,6 +1,7 @@
 package rmaterial
 
 import (
+	"encoding/json"
 	math "math"
 
 	irmath "github.com/piotrwyrw/radia/internal/rmath"
@@ -14,6 +15,10 @@ type Sky struct {
 	Image         *rimg.Raster `json:"image"`
 	FallbackColor rcolor.Color `json:"fallback_color"`
 	IOR           float64      `json:"ior"`
+}
+
+func (sky *Sky) Unmarshal(data []byte) error {
+	return json.Unmarshal(data, sky)
 }
 
 func (sky *Sky) SkyColor(direction *rmath.Vec3d) rcolor.Color {

@@ -55,13 +55,18 @@ func createMainUI(ctx *context.Context, imageWidth, imageHeight int) fyne.Canvas
 	ctx.RenderOutputImage = img
 	ctx.RenderOutputBuffer = buff
 
-	toolbar := widget.NewToolbar(widget.NewToolbarAction(theme.MediaPlayIcon(), func() {
-		if ctx.IsRendering {
-			return
-		}
+	toolbar := widget.NewToolbar(
+		widget.NewToolbarAction(theme.MediaPlayIcon(), func() {
+			if ctx.IsRendering {
+				return
+			}
 
-		go radia.InvokeRenderer(ctx, int32(imageWidth), int32(imageHeight))
-	}))
+			go radia.InvokeRenderer(ctx, int32(imageWidth), int32(imageHeight))
+		}),
+		widget.NewToolbarAction(theme.FolderOpenIcon(), func() {
+			
+		}),
+	)
 
 	return container.NewBorder(
 		container.NewVBox(

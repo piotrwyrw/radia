@@ -7,9 +7,12 @@ import (
 	"github.com/piotrwyrw/radia/radia/rimg"
 	"github.com/piotrwyrw/radia/radia/rmath"
 	"github.com/piotrwyrw/radia/radia/rtypes"
+	"github.com/sirupsen/logrus"
 )
 
 func TraceAllRays(scene *rtypes.Scene, raster *rimg.Raster, pixelSamples int, maxBounces int32, everyPixel func(x, y, n int32)) {
+	logrus.Infof("Rendering scene with %d samples and %d bounces.\n", pixelSamples, maxBounces)
+
 	// Find camera plane
 	scene.Camera.Facing.Normalize()
 	upDir := rmath.Vec3d{X: 0.0, Y: 1.0, Z: 0.0}
@@ -62,6 +65,8 @@ func TraceAllRays(scene *rtypes.Scene, raster *rimg.Raster, pixelSamples int, ma
 			go everyPixel(x, y, n)
 		}
 	}
+
+	logrus.Info("Render job complete.")
 }
 
 func TraceRay(origin rmath.Vec3d, direction rmath.Vec3d, s *rtypes.Scene, bounces int32, maxBounces int32) rcolor.Color {
