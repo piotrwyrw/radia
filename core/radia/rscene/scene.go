@@ -5,8 +5,8 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/piotrwyrw/radia/radia/rmaterial"
 	"github.com/piotrwyrw/radia/radia/rparser"
+	"github.com/piotrwyrw/radia/radia/rregistry"
 	"github.com/piotrwyrw/radia/radia/rtypes"
 	"github.com/sirupsen/logrus"
 )
@@ -38,7 +38,7 @@ func LoadSceneJSON(path string) (*rtypes.Scene, error) {
 	if err != nil {
 		return nil, err
 	}
-	scene, err := rparser.ParseScene(data, rmaterial.GetMaterialRegistry())
+	scene, err := rparser.ParseScene(data, rregistry.GetCentralRegistry())
 	if err != nil {
 		return nil, err
 	}

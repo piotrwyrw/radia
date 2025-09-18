@@ -12,6 +12,7 @@ import (
 	"fyne.io/fyne/v2/layout"
 	"fyne.io/fyne/v2/theme"
 	"fyne.io/fyne/v2/widget"
+	theme2 "fyne.io/x/fyne/theme"
 	"github.com/piotrwyrw/otherproj/internal/context"
 	"github.com/piotrwyrw/otherproj/internal/radia"
 )
@@ -26,6 +27,7 @@ func createStatusBar(ctx *context.Context) *fyne.Container {
 	status := widget.NewLabelWithData(ctx.StatusText)
 	status.TextStyle.Monospace = true
 	status.Alignment = fyne.TextAlignLeading
+	ctx.StatusLabel = status
 
 	// Rendering progress indicator
 	rect := canvas.NewRectangle(color.Transparent)
@@ -39,6 +41,13 @@ func createStatusBar(ctx *context.Context) *fyne.Container {
 	)
 
 	return statusBar
+}
+
+func createPropertiesTab() fyne.CanvasObject {
+	return container.NewAppTabs(
+		container.NewTabItemWithIcon("Settings", theme.SettingsIcon(), widget.NewLabel("Settings")),
+		container.NewTabItemWithIcon("Object", theme.InfoIcon(), widget.NewLabel("Object Settings")),
+	)
 }
 
 func createMainUI(ctx *context.Context, imageWidth, imageHeight int) fyne.CanvasObject {
@@ -64,7 +73,7 @@ func createMainUI(ctx *context.Context, imageWidth, imageHeight int) fyne.Canvas
 			go radia.InvokeRenderer(ctx, int32(imageWidth), int32(imageHeight))
 		}),
 		widget.NewToolbarAction(theme.FolderOpenIcon(), func() {
-			
+
 		}),
 	)
 
@@ -77,7 +86,7 @@ func createMainUI(ctx *context.Context, imageWidth, imageHeight int) fyne.Canvas
 		nil,
 		nil,
 		container.NewHSplit(
-			container.NewVBox(),
+			createPropertiesTab(),
 			container.NewBorder(
 				nil,
 				createStatusBar(ctx),
@@ -93,16 +102,18 @@ func CreateUI() {
 	imageWidth, imageHeight := 1500, 900
 
 	a := app.New()
+	a.Settings().SetTheme(theme2.AdwaitaTheme())
 
 	ctx := &context.Context{RenderProgress: binding.NewFloat(), StatusText: binding.NewString()}
 
-	w := a.NewWindow("Radia")
+	w := a.NewWindow("Radia Studio")
 	w.Resize(fyne.NewSize(1500, 900))
 
-	split := createMainUI(ctx, imageWidth, imageHeight)
+	ui := createMainUI(ctx, imageWidth, imageHeight)
 
 	ctx.StatusText.Set("Ready")
 
-	w.SetContent(split)
-	w.ShowAndRun()
+	w.SetContent(ui)
+	w.Show()
+	a.Run()
 }

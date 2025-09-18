@@ -1,9 +1,11 @@
 package radia
 
 import (
+	"math"
+
+	"fyne.io/fyne/v2"
 	"github.com/piotrwyrw/otherproj/internal/context"
 	"github.com/piotrwyrw/otherproj/internal/util"
-	"github.com/piotrwyrw/radia/radia/radia"
 	"github.com/piotrwyrw/radia/radia/rcolor"
 	"github.com/piotrwyrw/radia/radia/rimg"
 	"github.com/piotrwyrw/radia/radia/rmaterial"
@@ -28,35 +30,42 @@ func InvokeRenderer(ctx *context.Context, imageWidth int32, imageHeight int32) {
 		return
 	}
 
-	radia.Initialize()
-
-	//mat := rmaterial.UniversalMaterial{
-	//	Color:     rcolor.Color{R: 1.0, G: 0.5, B: 0.5},
-	//	Emission:  rcolor.ColorBlack(),
-	//	Roughness: 1.0,
-	//}
-
-	mat := rmaterial.GlassMaterial{
-		IOR: 1.0,
+	mat := rmaterial.UniversalMaterial{
+		Color:     rcolor.Color{R: 0.1, G: 0.6, B: 0.3},
+		Emission:  rcolor.ColorBlack(),
+		Roughness: 0.5,
 	}
 
 	scene := &rtypes.Scene{
 		Objects: []rtypes.ShapeWrapper{
 			robject.WrapShape(&rshapes.Sphere{
 				Center:   rmath.Vec3d{X: 0.0, Y: 0.0, Z: 2.0},
-				Radius:   0.3,
+				Radius:   0.2,
 				Material: robject.WrapShapeMaterial(&mat),
+			}),
+			robject.WrapShape(&rshapes.Sphere{
+				Center: rmath.Vec3d{X: -0.4, Y: 0.0, Z: 2.0},
+				Radius: 0.1,
+				Material: robject.WrapShapeMaterial(&rmaterial.UniversalMaterial{
+					Color:      rcolor.ColorWhite(),
+					Emission:   rcolor.ColorWhite(),
+					Brightness: 3.0,
+					Roughness:  10.0,
+				}),
 			}),
 		},
 		Camera: rtypes.Camera{
 			Location:    rmath.Vec3d{X: 0.0, Y: 0.0, Z: 0.0},
 			Facing:      rmath.Vec3d{X: 0.0, Y: 0.0, Z: 1.0},
-			FocalLength: 1.5,
+			FocalLength: 1.0,
 		},
 		WorldMat: robject.WrapEnvironmentMaterial(&rmaterial.Sky{
 			Image:         env,
 			IOR:           1.0,
 			FallbackColor: rcolor.ColorBlack(),
+			Intensity:     1.2,
+			Azimuth:       math.Pi * 1.5,
+			Elevation:     0.0,
 		}),
 	}
 
@@ -68,16 +77,21 @@ func InvokeRenderer(ctx *context.Context, imageWidth int32, imageHeight int32) {
 
 	destination := rimg.NewRaster(imageWidth, imageHeight)
 
-	rtracer.TraceAllRays(scene, destination, 100, 100, func(x, y, n int32) {
+	var lastPercent float64 = 0.0
+	rtracer.TraceAllRays(scene, destination, 50, 100, func(x, y, n int32) {
 		progress := float64(n) / float64(imageWidth*imageHeight)
-		ctx.RenderProgress.Set(progress)
+		if int(progress*100) != int(lastPercent*100) {
+			lastPercent = progress
+			ctx.RenderProgress.Set(progress)
+		}
 	})
 
 	util.UpdateFyneImageWithRaster(destination, ctx.RenderOutputBuffer)
 
-	ctx.StatusText.Set("Ready")
-	ctx.RenderOutputImage.Refresh()
-
-	ctx.IsRendering = false
-	ctx.RenderProgress.Set(0.0)
+	fyne.DoAndWait(func() {
+		ctx.StatusText.Set("Ready")
+		ctx.RenderOutputImage.Refresh()
+		ctx.IsRendering = false
+		ctx.RenderProgress.Set(0.0)
+	})
 }

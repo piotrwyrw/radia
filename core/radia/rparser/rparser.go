@@ -4,13 +4,12 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/piotrwyrw/radia/radia/rmaterial"
 	"github.com/piotrwyrw/radia/radia/robject"
-	"github.com/piotrwyrw/radia/radia/rshapes"
+	"github.com/piotrwyrw/radia/radia/rregistry"
 	"github.com/piotrwyrw/radia/radia/rtypes"
 )
 
-func parseShapeWrapper(data []byte, dst *rtypes.ShapeWrapper, registry *rmaterial.MaterialRegistry) error {
+func parseShapeWrapper(data []byte, dst *rtypes.ShapeWrapper, registry *rregistry.CentralRegistry) error {
 	var aux struct {
 		Type   string          `json:"type"`
 		Object json.RawMessage `json:"object"`
@@ -21,19 +20,19 @@ func parseShapeWrapper(data []byte, dst *rtypes.ShapeWrapper, registry *rmateria
 		return err
 	}
 
+	if !registry.HasShape(aux.Type) {
+		return fmt.Errorf("unknown shape: \"%s\"", aux.Type)
+	}
+
 	dst.Type = aux.Type
 
-	switch aux.Type {
-	case rtypes.ShapeIdentifierSphere:
-		var sphere rshapes.Sphere
-		err = sphere.Unmarshal(aux.Object, func(data []byte, dst *rtypes.ShapeMaterialWrapper) error {
-			return parseShapeMaterialWrapper(data, dst, registry)
-		})
-		dst.Object = &sphere
-		break
-	default:
-		return fmt.Errorf("unknown shape type: %s", aux.Type)
+	s, err := registry.InstantiateShape(aux.Type)
+	if err != nil {
+		return err
 	}
+	err = s.Unmarshal(aux.Object, func(data []byte, dst *rtypes.ShapeMaterialWrapper) error {
+		return parseShapeMaterialWrapper(data, dst, registry)
+	})
 
 	if err != nil {
 		return err
@@ -42,7 +41,7 @@ func parseShapeWrapper(data []byte, dst *rtypes.ShapeWrapper, registry *rmateria
 	return nil
 }
 
-func parseShapeMaterialWrapper(data []byte, dst *rtypes.ShapeMaterialWrapper, registry *rmaterial.MaterialRegistry) error {
+func parseShapeMaterialWrapper(data []byte, dst *rtypes.ShapeMaterialWrapper, registry *rregistry.CentralRegistry) error {
 	var aux struct {
 		Type     string          `json:"type"`
 		Name     string          `json:"name"`
@@ -58,11 +57,11 @@ func parseShapeMaterialWrapper(data []byte, dst *rtypes.ShapeMaterialWrapper, re
 		return fmt.Errorf("expected to parse shape material, got %s", aux.Type)
 	}
 
-	if !registry.HasShape(aux.Name) {
-		return fmt.Errorf("shape material \"%s\" not found in registry", aux.Name)
+	if !registry.HasShapeMat(aux.Name) {
+		return fmt.Errorf("unknown surface material: \"%s\"", aux.Name)
 	}
 
-	mat, err := registry.InstantiateShapeMaterial(aux.Name)
+	mat, err := registry.InstantiateShapeMat(aux.Name)
 	if err != nil {
 		return err
 	}
@@ -76,7 +75,7 @@ func parseShapeMaterialWrapper(data []byte, dst *rtypes.ShapeMaterialWrapper, re
 	return nil
 }
 
-func parseEnvironmentMaterialWrapper(data []byte, dst *rtypes.EnvironmentMaterialWrapper, registry *rmaterial.MaterialRegistry) error {
+func parseEnvironmentMaterialWrapper(data []byte, dst *rtypes.EnvironmentMaterialWrapper, registry *rregistry.CentralRegistry) error {
 	var aux struct {
 		Type     string          `json:"type"`
 		Name     string          `json:"name"`
@@ -92,11 +91,11 @@ func parseEnvironmentMaterialWrapper(data []byte, dst *rtypes.EnvironmentMateria
 		return fmt.Errorf("expected to parse environment material, got %s", aux.Type)
 	}
 
-	if !registry.HasEnvironment(aux.Name) {
-		return fmt.Errorf("environment material \"%s\" not found in registry", aux.Name)
+	if !registry.HasEnvMat(aux.Name) {
+		return fmt.Errorf("unknown environment material: \"%s\"", aux.Name)
 	}
 
-	mat, err := registry.InstantiateEnvironmentMaterial(aux.Name)
+	mat, err := registry.InstantiateEnvMat(aux.Name)
 
 	if err != nil {
 		return err
@@ -111,7 +110,7 @@ func parseEnvironmentMaterialWrapper(data []byte, dst *rtypes.EnvironmentMateria
 	return nil
 }
 
-func ParseScene(data []byte, registry *rmaterial.MaterialRegistry) (*rtypes.Scene, error) {
+func ParseScene(data []byte, registry *rregistry.CentralRegistry) (*rtypes.Scene, error) {
 	var aux struct {
 		Metadata rtypes.SceneMetadata `json:"metadata"`
 		Objects  []json.RawMessage    `json:"objects"`
