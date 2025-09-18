@@ -41,6 +41,8 @@ func RasterFromPNG(path string) (*Raster, error) {
 		}
 	}
 
+	raster.Source = path
+
 	return raster, nil
 }
 

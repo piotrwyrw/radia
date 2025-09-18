@@ -6,13 +6,14 @@ import (
 	"github.com/piotrwyrw/otherproj/internal/context"
 	"github.com/piotrwyrw/otherproj/internal/util"
 	"github.com/piotrwyrw/radia/radia/rcolor"
-	"github.com/piotrwyrw/radia/radia/rgeom"
 	"github.com/piotrwyrw/radia/radia/rimg"
 	"github.com/piotrwyrw/radia/radia/rmaterial"
-	"github.com/piotrwyrw/radia/radia/rmaterial/rworld"
 	"github.com/piotrwyrw/radia/radia/rmath"
+	"github.com/piotrwyrw/radia/radia/robject"
 	"github.com/piotrwyrw/radia/radia/rscene"
+	"github.com/piotrwyrw/radia/radia/rshapes"
 	"github.com/piotrwyrw/radia/radia/rtracer"
+	"github.com/piotrwyrw/radia/radia/rtypes"
 )
 
 func InvokeRenderer(ctx *context.Context, imageWidth int32, imageHeight int32) {
@@ -33,27 +34,31 @@ func InvokeRenderer(ctx *context.Context, imageWidth int32, imageHeight int32) {
 		Roughness: 0.5,
 	}
 
-	scene := rscene.Scene{
-		Objects: []rscene.Shape{
-			&rgeom.Sphere{
+	scene := rtypes.Scene{
+		Objects: []rtypes.ShapeWrapper{
+			robject.WrapShape(&rshapes.Sphere{
 				Center:   rmath.Vec3d{X: 0.0, Y: 0.0, Z: 2.0},
 				Radius:   0.3,
-				Material: rscene.WrapShapeMaterial(&mat),
-			},
+				Material: robject.WrapShapeMaterial(&mat),
+			}),
 		},
-		Camera: rscene.Camera{
+		Camera: rtypes.Camera{
 			Location:    rmath.Vec3d{X: 0.0, Y: 0.0, Z: 0.0},
 			Facing:      rmath.Vec3d{X: 0.0, Y: 0.0, Z: 1.0},
 			FocalLength: 1.5,
 		},
-		WorldMat: rscene.WrapEnvironmentMaterial(&rworld.Sky{
+		WorldMat: robject.WrapEnvironmentMaterial(&rmaterial.Sky{
 			Image:         env,
 			IOR:           1.0,
 			FallbackColor: rcolor.ColorBlack(),
 		}),
 	}
 
-	_ = scene.SaveJSON("scene_js.json")
+	_ = rscene.SaveSceneJSON(&scene, "scene_js.json")
+	_, err = rscene.LoadSceneJSON("scene_js.json")
+	if err != nil {
+		fmt.Printf("Could not load scene json: %v\n", err)
+	}
 
 	destination := rimg.NewRaster(imageWidth, imageHeight)
 

@@ -1,20 +1,44 @@
-package rgeom
+package rshapes
 
 import (
+	"encoding/json"
 	math2 "math"
 
 	rmath2 "github.com/piotrwyrw/radia/internal/rmath"
 	"github.com/piotrwyrw/radia/radia/rmath"
-	"github.com/piotrwyrw/radia/radia/rscene"
+	"github.com/piotrwyrw/radia/radia/rtypes"
 )
 
 type Sphere struct {
-	Center   rmath.Vec3d
-	Radius   float64
-	Material rscene.ShapeMaterialWrapper
+	Center   rmath.Vec3d                 `json:"center"`
+	Radius   float64                     `json:"radius"`
+	Material rtypes.ShapeMaterialWrapper `json:"material"`
 }
 
-func (s *Sphere) Hit(ray *rmath2.Ray) *rscene.Intersection {
+func (s *Sphere) Unmarshal(data []byte, fParseShapeMaterial func(data []byte, dst *rtypes.ShapeMaterialWrapper) error) error {
+	var aux struct {
+		Center   rmath.Vec3d     `json:"center"`
+		Radius   float64         `json:"radius"`
+		Material json.RawMessage `json:"material"`
+	}
+
+	err := json.Unmarshal(data, &aux)
+	if err != nil {
+		return err
+	}
+
+	s.Center = aux.Center
+	s.Radius = aux.Radius
+
+	err = fParseShapeMaterial(aux.Material, &s.Material)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (s *Sphere) Hit(ray *rmath.Ray) *rtypes.Intersection {
 	L := ray.Origin.Copy()
 	L.Sub(s.Center)
 
@@ -42,7 +66,7 @@ func (s *Sphere) Hit(ray *rmath2.Ray) *rscene.Intersection {
 	point.Resize(distance)
 	point.Add(ray.Origin)
 
-	return &rscene.Intersection{
+	return &rtypes.Intersection{
 		Point:    point,
 		Distance: distance,
 		Object:   s,
@@ -57,7 +81,7 @@ func (s *Sphere) Normal(at rmath.Vec3d) rmath.Vec3d {
 	return normal
 }
 
-func (s *Sphere) Reflect(intersection *rscene.Intersection) rmath.Vec3d {
+func (s *Sphere) Reflect(intersection *rtypes.Intersection) rmath.Vec3d {
 	normal := s.Normal(intersection.Point)
 	incoming := intersection.Incoming.Direction
 
@@ -71,6 +95,10 @@ func (s *Sphere) Reflect(intersection *rscene.Intersection) rmath.Vec3d {
 	return reflected
 }
 
-func (s *Sphere) GetMaterial() rscene.ShapeMaterialWrapper {
+func (s *Sphere) GetMaterial() rtypes.ShapeMaterialWrapper {
 	return s.Material
+}
+
+func (s *Sphere) Identifier() string {
+	return rtypes.ShapeIdentifierSphere
 }

@@ -3,14 +3,13 @@ package rtracer
 import (
 	math2 "math"
 
-	rmath2 "github.com/piotrwyrw/radia/internal/rmath"
 	"github.com/piotrwyrw/radia/radia/rcolor"
 	"github.com/piotrwyrw/radia/radia/rimg"
 	"github.com/piotrwyrw/radia/radia/rmath"
-	"github.com/piotrwyrw/radia/radia/rscene"
+	"github.com/piotrwyrw/radia/radia/rtypes"
 )
 
-func TraceAllRays(scene *rscene.Scene, raster *rimg.Raster, pixelSamples int, maxBounces int32, everyPixel func(x, y, n int32)) {
+func TraceAllRays(scene *rtypes.Scene, raster *rimg.Raster, pixelSamples int, maxBounces int32, everyPixel func(x, y, n int32)) {
 	// Find camera plane
 	scene.Camera.Facing.Normalize()
 	upDir := rmath.Vec3d{X: 0.0, Y: 1.0, Z: 0.0}
@@ -65,14 +64,14 @@ func TraceAllRays(scene *rscene.Scene, raster *rimg.Raster, pixelSamples int, ma
 	}
 }
 
-func TraceRay(origin rmath.Vec3d, direction rmath.Vec3d, s *rscene.Scene, bounces int32, maxBounces int32) rcolor.Color {
-	ray := rmath2.Ray{Origin: origin, Direction: direction}
+func TraceRay(origin rmath.Vec3d, direction rmath.Vec3d, s *rtypes.Scene, bounces int32, maxBounces int32) rcolor.Color {
+	ray := rmath.Ray{Origin: origin, Direction: direction}
 
 	var distance = math2.Inf(1)
-	var intersection *rscene.Intersection = nil
+	var intersection *rtypes.Intersection = nil
 
 	for _, obj := range s.Objects {
-		i := obj.Hit(&ray)
+		i := obj.Object.Hit(&ray)
 		if i == nil {
 			continue
 		}

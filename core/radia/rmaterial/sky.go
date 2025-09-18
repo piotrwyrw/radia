@@ -1,4 +1,4 @@
-package rworld
+package rmaterial
 
 import (
 	math "math"
@@ -7,11 +7,12 @@ import (
 	"github.com/piotrwyrw/radia/radia/rcolor"
 	"github.com/piotrwyrw/radia/radia/rimg"
 	"github.com/piotrwyrw/radia/radia/rmath"
+	"github.com/piotrwyrw/radia/radia/rtypes"
 )
 
 type Sky struct {
 	Image         *rimg.Raster `json:"image"`
-	FallbackColor rcolor.Color `json:"fallbackColor"`
+	FallbackColor rcolor.Color `json:"fallback_color"`
 	IOR           float64      `json:"ior"`
 }
 
@@ -45,5 +46,5 @@ func (sky *Sky) SkyColor(direction *rmath.Vec3d) rcolor.Color {
 }
 
 func (sky *Sky) Identifier() string {
-	return "RadiaSky"
+	return rtypes.SkyMaterialIdentifier
 }

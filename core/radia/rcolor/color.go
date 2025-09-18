@@ -7,9 +7,9 @@ import (
 )
 
 type Color struct {
-	R float64
-	G float64
-	B float64
+	R float64 `json:"r"`
+	G float64 `json:"g"`
+	B float64 `json:"b"`
 }
 
 func (c *Color) Invert() Color {

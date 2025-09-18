@@ -4,15 +4,12 @@ import (
 	"encoding/json"
 	"os"
 	"path/filepath"
+
+	"github.com/piotrwyrw/radia/radia/rparser"
+	"github.com/piotrwyrw/radia/radia/rtypes"
 )
 
-type Scene struct {
-	Objects  []Shape
-	Camera   Camera
-	WorldMat EnvironmentMaterialWrapper
-}
-
-func (s *Scene) SaveJSON(path string) error {
+func SaveSceneJSON(s *rtypes.Scene, path string) error {
 	dir := filepath.Dir(path)
 	e := os.MkdirAll(dir, 0777)
 	if e != nil {
@@ -31,4 +28,16 @@ func (s *Scene) SaveJSON(path string) error {
 	}
 
 	return nil
+}
+
+func LoadSceneJSON(path string) (*rtypes.Scene, error) {
+	data, err := os.ReadFile(path)
+	if err != nil {
+		return nil, err
+	}
+	scene, err := rparser.UnmarshalScene(data)
+	if err != nil {
+		return nil, err
+	}
+	return scene, nil
 }
