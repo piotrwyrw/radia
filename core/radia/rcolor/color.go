@@ -12,6 +12,10 @@ type Color struct {
 	B float64 `json:"b"`
 }
 
+func (c *Color) Copy() Color {
+	return Color{R: c.R, G: c.G, B: c.B}
+}
+
 func (c *Color) Invert() Color {
 	maximum := c.R
 	if c.G > maximum {

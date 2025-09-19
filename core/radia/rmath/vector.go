@@ -11,6 +11,10 @@ type Vec3d struct {
 	Z float64 `json:"z"`
 }
 
+func Vec(x, y, z float64) Vec3d {
+	return Vec3d{X: x, Y: y, Z: z}
+}
+
 func RandomVector() Vec3d {
 	for {
 		v := Vec3d{

@@ -1,11 +1,11 @@
 package radia
 
 import (
+	"fmt"
 	"math"
+	"time"
 
-	"fyne.io/fyne/v2"
 	"github.com/piotrwyrw/otherproj/internal/context"
-	"github.com/piotrwyrw/otherproj/internal/util"
 	"github.com/piotrwyrw/radia/radia/rcolor"
 	"github.com/piotrwyrw/radia/radia/rimg"
 	"github.com/piotrwyrw/radia/radia/rmaterial"
@@ -18,7 +18,7 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-func InvokeRenderer(ctx *context.Context, imageWidth int32, imageHeight int32) {
+func InvokeRenderer(ctx *context.Context) {
 	ctx.StatusText.Set("Rendering ...")
 	ctx.IsRendering = true
 	ctx.RenderProgress.Set(0.0)
@@ -69,29 +69,32 @@ func InvokeRenderer(ctx *context.Context, imageWidth int32, imageHeight int32) {
 		}),
 	}
 
+	//scene := rscene.NewBlankScene()
+
 	_ = rscene.SaveSceneJSON(scene, "scene_js.json")
-	_, err = rscene.LoadSceneJSON("scene_js.json")
+	s, err := rscene.LoadSceneJSON("scene_js.json")
 	if err != nil {
 		logrus.Errorf("Could not load scene json: %v\n", err)
 	}
+	ctx.CurrentScene = *s
 
-	destination := rimg.NewRaster(imageWidth, imageHeight)
+	imgWidth := int32(ctx.Settings.ImageWidth)
+	imgHeight := int32(ctx.Settings.ImageHeight)
+
+	rendered := rimg.NewRaster(imgWidth, imgHeight)
 
 	var lastPercent float64 = 0.0
-	rtracer.TraceAllRays(scene, destination, 50, 100, func(x, y, n int32) {
-		progress := float64(n) / float64(imageWidth*imageHeight)
-		if int(progress*100) != int(lastPercent*100) {
-			lastPercent = progress
-			ctx.RenderProgress.Set(progress)
+	renderStart := time.Now().UnixMilli()
+	rtracer.TraceAllRays(scene, rendered, 100, 100, 0, func(n int32, percent float64) {
+		if int(percent*100) >= int(lastPercent*100)+2 {
+			lastPercent = percent
+			ctx.RenderProgress.Set(percent)
 		}
 	})
+	renderEnd := time.Now().UnixMilli()
 
-	util.UpdateFyneImageWithRaster(destination, ctx.RenderOutputBuffer)
-
-	fyne.DoAndWait(func() {
-		ctx.StatusText.Set("Ready")
-		ctx.RenderOutputImage.Refresh()
-		ctx.IsRendering = false
-		ctx.RenderProgress.Set(0.0)
-	})
+	ctx.StatusText.Set(fmt.Sprintf("Done (%d ms).", renderEnd-renderStart))
+	ctx.IsRendering = false
+	ctx.RenderProgress.Set(0.0)
+	ctx.PreviewImage.Update(rendered)
 }

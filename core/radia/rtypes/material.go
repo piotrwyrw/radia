@@ -6,6 +6,7 @@ import (
 )
 
 const SkyMaterialIdentifier = "radia.sky"
+const GradientSkyMaterialIdentifier = "radia.sky"
 const GlassMaterialIdentifier = "radia.glass"
 const UniversalMaterialIdentifier = "radia.universal"
 

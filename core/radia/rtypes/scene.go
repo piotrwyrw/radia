@@ -1,8 +1,8 @@
 package rtypes
 
 type Scene struct {
-	Metadata SceneMetadata              `json:"metadata"`
-	Objects  []ShapeWrapper             `json:"objects"`
-	Camera   Camera                     `json:"camera"`
-	WorldMat EnvironmentMaterialWrapper `json:"world"`
+	Metadata SceneMetadata              `json:"metadata" ui:"Metadata"`
+	Objects  []ShapeWrapper             `json:"objects" ui:"-"`
+	Camera   Camera                     `json:"camera" ui:"Camera"`
+	WorldMat EnvironmentMaterialWrapper `json:"world" ui:"-"`
 }

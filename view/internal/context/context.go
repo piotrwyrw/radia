@@ -1,12 +1,16 @@
 package context
 
 import (
-	"image"
-
-	"fyne.io/fyne/v2/canvas"
 	"fyne.io/fyne/v2/data/binding"
 	"fyne.io/fyne/v2/widget"
+	"github.com/piotrwyrw/otherproj/internal/types"
+	"github.com/piotrwyrw/radia/radia/rtypes"
 )
+
+type Settings struct {
+	ImageWidth  int
+	ImageHeight int
+}
 
 type Context struct {
 	RenderProgress binding.Float
@@ -14,7 +18,10 @@ type Context struct {
 	StatusLabel *widget.Label
 	StatusText  binding.String
 
-	RenderOutputBuffer *image.RGBA
-	RenderOutputImage  *canvas.Image
-	IsRendering        bool
+	PreviewImage *types.PreviewImage
+	IsRendering  bool
+
+	CurrentScene rtypes.Scene
+
+	Settings Settings
 }
