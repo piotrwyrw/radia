@@ -1,4 +1,4 @@
-package ui
+package cfgui
 
 import (
 	"fmt"
@@ -12,6 +12,25 @@ import (
 	"github.com/piotrwyrw/otherproj/internal/util"
 	"github.com/sirupsen/logrus"
 )
+
+type SettingsPanel struct {
+	objects  map[reflect.Value]fyne.CanvasObject // Maps fields to their controls
+	children []*SettingsPanel
+}
+
+func (s *SettingsPanel) SetDefaultValues() {
+	for k, v := range s.objects {
+		v, ok := v.(*widget.Entry)
+		if !ok {
+			continue
+		}
+		v.SetText(fmt.Sprintf("%v", k.Interface()))
+	}
+
+	for _, child := range s.children {
+		child.SetDefaultValues()
+	}
+}
 
 func controlForType(t reflect.Type) (fyne.CanvasObject, error) {
 	if t.Kind() == reflect.String {
@@ -96,9 +115,10 @@ func bindEntryWidget(entry *widget.Entry, field reflect.Value) {
 			field.SetInt(value)
 			return
 		}
+		return
 	}
 
-	logrus.Fatal("Could not detect appropriate entry widget value type for: %v\n", field.Kind())
+	logrus.Fatalf("Could not detect appropriate entry widget value type for: %v\n", field.Kind())
 }
 
 func createAndBindControl(field reflect.Value) (fyne.CanvasObject, error) {
@@ -121,20 +141,22 @@ func createAndBindControl(field reflect.Value) (fyne.CanvasObject, error) {
 	return ctl, nil
 }
 
-// Create a settings panel via reflection
-func createSettingsPanel(s interface{}) (fyne.CanvasObject, error) {
+// CreateSettingsPanel -Create a settings panel via reflection
+func CreateSettingsPanel(s interface{}) (fyne.CanvasObject, *SettingsPanel, error) {
 	sValue := reflect.ValueOf(s)
 
 	if sValue.Kind() == reflect.Ptr {
 		sValue = sValue.Elem()
 	}
 	if sValue.Kind() != reflect.Struct {
-		return nil, fmt.Errorf("expected struct got %T", s)
+		return nil, nil, fmt.Errorf("expected struct got %T", s)
 	}
 
 	sType := sValue.Type()
 
 	form := container.New(layout.NewFormLayout())
+
+	panel := SettingsPanel{objects: make(map[reflect.Value]fyne.CanvasObject), children: make([]*SettingsPanel, 0)}
 
 	for i := 0; i < sType.NumField(); i++ {
 		fieldValue := sValue.Field(i)
@@ -152,9 +174,9 @@ func createSettingsPanel(s interface{}) (fyne.CanvasObject, error) {
 		}
 
 		if fieldType.Type.Kind() == reflect.Struct {
-			obj, err := createSettingsPanel(fieldValue.Addr().Interface())
+			obj, child, err := CreateSettingsPanel(fieldValue.Addr().Interface())
 			if err != nil {
-				return nil, err
+				return nil, nil, err
 			}
 
 			// Add accordion category, don't generate the field itself
@@ -164,16 +186,20 @@ func createSettingsPanel(s interface{}) (fyne.CanvasObject, error) {
 				accordion.OpenAll()
 				return accordion
 			}))
+
+			panel.children = append(panel.children, child)
+
 			continue
 		}
 
 		control, err := createAndBindControl(fieldValue)
 		if err != nil {
-			return nil, err
+			return nil, nil, err
 		}
 		form.Add(widget.NewLabel(displayName))
 		form.Add(control)
+		panel.objects[fieldValue] = control
 
 	}
-	return form, nil
+	return form, &panel, nil
 }

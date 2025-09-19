@@ -38,6 +38,8 @@ func parseShapeWrapper(data []byte, dst *rtypes.ShapeWrapper, registry *rregistr
 		return err
 	}
 
+	dst.Object = s
+
 	return nil
 }
 

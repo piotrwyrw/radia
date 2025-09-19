@@ -1,7 +1,6 @@
 package ui
 
 import (
-	"image"
 	"image/color"
 
 	"fyne.io/fyne/v2"
@@ -9,14 +8,16 @@ import (
 	"fyne.io/fyne/v2/canvas"
 	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/data/binding"
+	"fyne.io/fyne/v2/dialog"
 	"fyne.io/fyne/v2/layout"
 	ftheme "fyne.io/fyne/v2/theme"
 	"fyne.io/fyne/v2/widget"
-	"github.com/piotrwyrw/otherproj/internal/context"
+	"github.com/piotrwyrw/otherproj/internal/cfgui"
 	"github.com/piotrwyrw/otherproj/internal/radia"
-	"github.com/piotrwyrw/otherproj/internal/types"
+	"github.com/piotrwyrw/otherproj/internal/state"
 	"github.com/piotrwyrw/otherproj/internal/ui/vtheme"
 	"github.com/piotrwyrw/radia/radia/rscene"
+	"github.com/sirupsen/logrus"
 )
 
 func createSeparatorLine() *canvas.Line {
@@ -25,16 +26,16 @@ func createSeparatorLine() *canvas.Line {
 	return sepLine
 }
 
-func createStatusBar(ctx *context.Context) *fyne.Container {
-	status := widget.NewLabelWithData(ctx.StatusText)
+func createStatusBar(state *state.State) *fyne.Container {
+	status := widget.NewLabelWithData(state.StatusText)
 	status.TextStyle.Monospace = true
 	status.Alignment = fyne.TextAlignLeading
-	ctx.StatusLabel = status
+	state.StatusLabel = status
 
 	// Rendering progress indicator
 	rect := canvas.NewRectangle(color.Transparent)
 	rect.SetMinSize(fyne.NewSize(400, 0))
-	progress := widget.NewProgressBarWithData(ctx.RenderProgress)
+	progress := widget.NewProgressBarWithData(state.RenderProgress)
 	progressContainer := container.NewStack(rect, progress)
 
 	statusBar := container.NewVBox(
@@ -45,10 +46,10 @@ func createStatusBar(ctx *context.Context) *fyne.Container {
 	return statusBar
 }
 
-func createObjectList(ctx *context.Context) fyne.CanvasObject {
+func createObjectList(state *state.State) fyne.CanvasObject {
 	objectList := widget.NewList(
 		func() int {
-			return len(ctx.CurrentScene.Objects)
+			return len(state.Context.CurrentScene.Objects)
 		},
 		func() fyne.CanvasObject {
 			typeLabel := widget.NewLabel("")
@@ -69,78 +70,102 @@ func createObjectList(ctx *context.Context) fyne.CanvasObject {
 		},
 		func(i widget.ListItemID, o fyne.CanvasObject) {
 			objects := o.(*fyne.Container).Objects
-			objects[2].(*widget.Label).SetText(ctx.CurrentScene.Objects[i].Type)
-			objects[5].(*widget.Label).SetText(ctx.CurrentScene.Objects[i].Type)
+			objects[2].(*widget.Label).SetText(state.Context.CurrentScene.Objects[i].Type)
+			objects[5].(*widget.Label).SetText(state.Context.CurrentScene.Objects[i].Type)
 		})
 
 	return objectList
 }
 
-func createSidebar(ctx *context.Context) (fyne.CanvasObject, error) {
-	settings, err := createSettingsPanel(&ctx.CurrentScene)
+func createSidebar(state *state.State) (fyne.CanvasObject, error) {
+	settings, panel, err := cfgui.CreateSettingsPanel(&state.Context)
 	if err != nil {
 		return nil, err
 	}
 
+	state.Settings = panel
+
 	return container.NewAppTabs(
 		container.NewTabItemWithIcon("Settings", ftheme.SettingsIcon(), container.NewVScroll(settings)),
-		container.NewTabItemWithIcon("Outliner", ftheme.StorageIcon(), createObjectList(ctx)),
+		container.NewTabItemWithIcon("Outliner", ftheme.StorageIcon(), createObjectList(state)),
 	), nil
 }
 
-func createImagePreview(ctx *context.Context) fyne.CanvasObject {
-	buff := image.NewRGBA(image.Rect(0, 0, ctx.Settings.ImageWidth, ctx.Settings.ImageHeight))
-	img := canvas.NewImageFromImage(buff)
-	img.FillMode = canvas.ImageFillContain
-
-	for y := 0; y < ctx.Settings.ImageHeight; y++ {
-		for x := 0; x < ctx.Settings.ImageWidth; x++ {
-			buff.Set(x, y, color.Gray{Y: 5})
-		}
-	}
-
-	ctx.PreviewImage = types.NewPreviewImage(buff, img)
-
-	return img
+func createImagePreview(state *state.State) fyne.CanvasObject {
+	state.PreviewImage.Create(state.Context.Settings.ImageWidth, state.Context.Settings.ImageHeight)
+	return state.PreviewImage.ImageWidget
 }
 
-func createToolbar(ctx *context.Context) fyne.CanvasObject {
+func createToolbar(state *state.State) fyne.CanvasObject {
 	toolbar := widget.NewToolbar(
 		widget.NewToolbarAction(ftheme.MediaPlayIcon(), func() {
-			if ctx.IsRendering {
+			if state.IsRendering {
 				return
 			}
 
-			go radia.InvokeRenderer(ctx)
+			go radia.InvokeRenderer(state)
 		}),
 		widget.NewToolbarAction(ftheme.FolderOpenIcon(), func() {
+			go func() {
+				window := fyne.CurrentApp().Driver().AllWindows()[0]
+				d := dialog.NewFileOpen(func(read fyne.URIReadCloser, e error) {
+					if e != nil {
+						logrus.Errorf("Could not open scene file: %v\n", e)
+						return
+					}
 
+					if read == nil {
+						return
+					}
+
+					scene, err := rscene.LoadSceneJSON(read.URI().Path())
+					if err != nil {
+						logrus.Errorf("Could not load scene file: %v\n", err)
+						return
+					}
+					state.Context.CurrentScene = *scene
+					state.Settings.SetDefaultValues()
+				}, window)
+				d.Resize(window.Canvas().Size())
+				fyne.Do(func() {
+					d.Show()
+				})
+			}()
 		}),
 	)
 
 	return toolbar
 }
 
-func createMainUI(ctx *context.Context) (fyne.CanvasObject, error) {
-	props, err := createSidebar(ctx)
+func createMainUI(state *state.State) (fyne.CanvasObject, error) {
+	props, err := createSidebar(state)
 	if err != nil {
 		return nil, err
 	}
 
-	toolbar := createToolbar(ctx)
-	statusBar := createStatusBar(ctx)
-	preview := createImagePreview(ctx)
+	toolbar := createToolbar(state)
+	statusBar := createStatusBar(state)
+	preview := createImagePreview(state)
+
+	var borderContainer *fyne.Container
+
+	borderContainer = container.NewBorder(
+		nil,
+		statusBar,
+		nil,
+		nil,
+		preview,
+	)
+
+	state.PreviewImage.OnUpdate = func(img *canvas.Image) {
+		borderContainer.Objects[0] = img
+	}
 
 	mainSplit := container.NewHSplit(
 		props,
-		container.NewBorder(
-			nil,
-			statusBar,
-			nil,
-			nil,
-			preview,
-		),
+		borderContainer,
 	)
+
 	mainSplit.SetOffset(0.25)
 
 	return container.NewBorder(
@@ -158,24 +183,29 @@ func createMainUI(ctx *context.Context) (fyne.CanvasObject, error) {
 func CreateUI() error {
 	imageWidth, imageHeight := 1500, 900
 
-	a := app.New()
+	a := app.NewWithID("view.master")
 	a.Settings().SetTheme(vtheme.RadiaTheme{})
 
-	ctx := &context.Context{RenderProgress: binding.NewFloat(), StatusText: binding.NewString(), Settings: context.Settings{
-		ImageWidth:  imageWidth,
-		ImageHeight: imageHeight,
+	s := &state.State{RenderProgress: binding.NewFloat(), StatusText: binding.NewString(), Context: state.RenderContext{
+		Settings: state.RenderSettings{
+			Samples:     10,
+			MaxBounces:  100,
+			Threads:     0,
+			ImageWidth:  imageWidth,
+			ImageHeight: imageHeight,
+		},
 	}}
-	ctx.CurrentScene = *rscene.NewBlankScene()
+	s.Context.CurrentScene = *rscene.NewBlankScene()
 
 	w := a.NewWindow("Radia Studio")
 	w.Resize(fyne.NewSize(1500, 900))
 
-	ui, err := createMainUI(ctx)
+	ui, err := createMainUI(s)
 	if err != nil {
 		return err
 	}
 
-	ctx.StatusText.Set("Ready")
+	s.StatusText.Set("Ready")
 
 	w.SetContent(ui)
 	w.Show()

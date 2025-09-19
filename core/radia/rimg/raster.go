@@ -1,6 +1,7 @@
 package rimg
 
 import (
+	"encoding/json"
 	"fmt"
 	"image/png"
 	"os"
@@ -8,6 +9,7 @@ import (
 	"strings"
 
 	"github.com/piotrwyrw/radia/radia/rcolor"
+	"github.com/sirupsen/logrus"
 )
 
 type Raster struct {
@@ -15,6 +17,26 @@ type Raster struct {
 	Height int32          `json:"-"`
 	Pixels []rcolor.Color `json:"-"`
 	Source string         `json:"source"`
+}
+
+func (r *Raster) UnmarshalJSON(data []byte) error {
+	type AuxRaster Raster
+	aux := AuxRaster{}
+	err := json.Unmarshal(data, &aux)
+	if err != nil {
+		return err
+	}
+	*r = Raster(aux)
+	if r.Source == "" {
+		return nil
+	}
+	loaded, err := RasterFromPNG(r.Source)
+	if err != nil {
+		return err
+	}
+	logrus.Infof("Loaded raster image: \"%s\"\n", r.Source)
+	*r = *loaded
+	return nil
 }
 
 func RasterFromPNG(path string) (*Raster, error) {

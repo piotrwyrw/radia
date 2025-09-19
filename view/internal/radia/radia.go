@@ -4,33 +4,46 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/piotrwyrw/otherproj/internal/context"
+	"github.com/piotrwyrw/otherproj/internal/state"
 	"github.com/piotrwyrw/radia/radia/rimg"
 	"github.com/piotrwyrw/radia/radia/rtracer"
 )
 
-func InvokeRenderer(ctx *context.Context) {
-	ctx.StatusText.Set("Rendering ...")
-	ctx.IsRendering = true
-	ctx.RenderProgress.Set(0.0)
+func InvokeRenderer(state *state.State) {
+	if state.Context.Settings.ImageWidth < 1 || state.Context.Settings.ImageHeight < 1 {
+		state.StatusText.Set("Image Too Small!")
+		return
+	}
 
-	imgWidth := int32(ctx.Settings.ImageWidth)
-	imgHeight := int32(ctx.Settings.ImageHeight)
+	state.StatusText.Set("Rendering ...")
+	state.IsRendering = true
+	state.RenderProgress.Set(0.0)
+
+	state.PreviewImage.Create(state.Context.Settings.ImageWidth, state.Context.Settings.ImageHeight)
+
+	imgWidth := int32(state.Context.Settings.ImageWidth)
+	imgHeight := int32(state.Context.Settings.ImageHeight)
 
 	rendered := rimg.NewRaster(imgWidth, imgHeight)
 
 	var lastPercent float64 = 0.0
 	renderStart := time.Now().UnixMilli()
-	rtracer.TraceAllRays(&ctx.CurrentScene, rendered, 100, 100, 0, func(n int32, percent float64) {
-		if int(percent*100) >= int(lastPercent*100)+2 {
-			lastPercent = percent
-			ctx.RenderProgress.Set(percent)
-		}
-	})
+	rtracer.TraceAllRays(
+		&state.Context.CurrentScene,
+		rendered,
+		state.Context.Settings.Samples,
+		state.Context.Settings.MaxBounces,
+		state.Context.Settings.Threads,
+		func(n int32, percent float64) {
+			if int(percent*100) >= int(lastPercent*100)+2 {
+				lastPercent = percent
+				state.RenderProgress.Set(percent)
+			}
+		})
 	renderEnd := time.Now().UnixMilli()
 
-	ctx.StatusText.Set(fmt.Sprintf("Done (%d ms).", renderEnd-renderStart))
-	ctx.IsRendering = false
-	ctx.RenderProgress.Set(0.0)
-	ctx.PreviewImage.Update(rendered)
+	state.StatusText.Set(fmt.Sprintf("Done (%d ms).", renderEnd-renderStart))
+	state.IsRendering = false
+	state.RenderProgress.Set(0.0)
+	state.PreviewImage.Update(rendered)
 }

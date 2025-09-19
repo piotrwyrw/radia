@@ -104,7 +104,7 @@ func TraceAllRays(scene *rtypes.Scene, raster *rimg.Raster, pixelSamples int, ma
 	// Render progress monitor
 	go func() {
 		done := 0
-		for _ = range progressSig {
+		for range progressSig {
 			done++
 
 			progress(n, float64(done)/float64(raster.Width*raster.Height))
