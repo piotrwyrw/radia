@@ -10,6 +10,7 @@ import (
 	"fyne.io/fyne/v2/layout"
 	"fyne.io/fyne/v2/widget"
 	"github.com/piotrwyrw/otherproj/internal/util"
+	"github.com/sirupsen/logrus"
 )
 
 func controlForType(t reflect.Type) (fyne.CanvasObject, error) {
@@ -54,57 +55,125 @@ func controlForType(t reflect.Type) (fyne.CanvasObject, error) {
 	return nil, fmt.Errorf("could not match control for type %v", t)
 }
 
+func bindEntryWidget(entry *widget.Entry, field reflect.Value) {
+	resetValue := func() {
+		entry.SetText(fmt.Sprintf("%v", field.Interface()))
+	}
+
+	resetValue()
+
+	if !field.CanSet() {
+		entry.Disable()
+		return
+	}
+
+	if field.Kind() == reflect.String {
+		entry.OnChanged = func(str string) {
+			field.SetString(str)
+		}
+		return
+	}
+
+	if util.IsFloat(field.Type()) {
+		entry.OnChanged = func(str string) {
+			value, err := strconv.ParseFloat(str, 64)
+			if err != nil {
+				resetValue()
+				return
+			}
+			field.SetFloat(value)
+		}
+		return
+	}
+
+	if util.IsInteger(field.Type()) {
+		entry.OnChanged = func(str string) {
+			value, err := strconv.ParseInt(str, 10, 64)
+			if err != nil {
+				resetValue()
+				return
+			}
+			field.SetInt(value)
+			return
+		}
+	}
+
+	logrus.Fatal("Could not detect appropriate entry widget value type for: %v\n", field.Kind())
+}
+
+func createAndBindControl(field reflect.Value) (fyne.CanvasObject, error) {
+	ctl, err := controlForType(field.Type())
+	if err != nil {
+		return nil, err
+	}
+
+	f := field
+
+	switch control := ctl.(type) {
+	case *widget.Entry:
+		bindEntryWidget(control, f)
+		break
+	default:
+		logrus.Fatal("Unsupported control for type %s\n", f.Type)
+		break
+	}
+
+	return ctl, nil
+}
+
 // Create a settings panel via reflection
 func createSettingsPanel(s interface{}) (fyne.CanvasObject, error) {
-	v := reflect.ValueOf(s)
-	t := reflect.TypeOf(s)
+	sValue := reflect.ValueOf(s)
 
-	if v.Kind() == reflect.Ptr {
-		v = v.Elem()
+	if sValue.Kind() == reflect.Ptr {
+		sValue = sValue.Elem()
 	}
-	if v.Kind() != reflect.Struct {
+	if sValue.Kind() != reflect.Struct {
 		return nil, fmt.Errorf("expected struct got %T", s)
 	}
 
+	sType := sValue.Type()
+
 	form := container.New(layout.NewFormLayout())
 
-	for i := 0; i < t.NumField(); i++ {
-		field := v.Field(i)
-		typeField := t.Field(i)
-		name := typeField.Tag.Get("ui")
+	for i := 0; i < sType.NumField(); i++ {
+		fieldValue := sValue.Field(i)
+		fieldType := sType.Field(i)
+
+		displayName := fieldType.Tag.Get("ui")
 
 		// Ignore marked fields
-		if name == "-" {
+		if displayName == "-" {
 			continue
 		}
 
-		if name == "" {
-			name = typeField.Name
+		if displayName == "" {
+			displayName = fieldType.Name
 		}
 
-		if typeField.Type.Kind() == reflect.Struct {
-			obj, err := createSettingsPanel(field.Interface())
+		if fieldType.Type.Kind() == reflect.Struct {
+			obj, err := createSettingsPanel(fieldValue.Addr().Interface())
 			if err != nil {
 				return nil, err
 			}
 
 			// Add accordion category, don't generate the field itself
-			//form.Add(widget.NewLabel(name))
 			form.Add(layout.NewSpacer())
 			form.Add(util.Do(func() fyne.CanvasObject {
-				accordion := widget.NewAccordion(widget.NewAccordionItem(name, obj))
+				accordion := widget.NewAccordion(widget.NewAccordionItem(displayName, obj))
 				accordion.OpenAll()
 				return accordion
 			}))
 			continue
 		}
 
-		form.Add(widget.NewLabel(name))
-		ctl, err := controlForType(field.Type())
+		control, err := createAndBindControl(fieldValue)
 		if err != nil {
 			return nil, err
 		}
-		form.Add(ctl)
+		form.Add(widget.NewLabel(displayName))
+		form.Add(control)
+
 	}
 	return form, nil
 }

@@ -10,12 +10,13 @@ import (
 	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/data/binding"
 	"fyne.io/fyne/v2/layout"
-	"fyne.io/fyne/v2/theme"
+	ftheme "fyne.io/fyne/v2/theme"
 	"fyne.io/fyne/v2/widget"
-	theme2 "fyne.io/x/fyne/theme"
 	"github.com/piotrwyrw/otherproj/internal/context"
 	"github.com/piotrwyrw/otherproj/internal/radia"
 	"github.com/piotrwyrw/otherproj/internal/types"
+	"github.com/piotrwyrw/otherproj/internal/ui/vtheme"
+	"github.com/piotrwyrw/radia/radia/rscene"
 )
 
 func createSeparatorLine() *canvas.Line {
@@ -58,10 +59,10 @@ func createObjectList(ctx *context.Context) fyne.CanvasObject {
 
 			return container.NewHBox(
 				layout.NewSpacer(),
-				widget.NewIcon(theme.FileIcon()),
+				widget.NewIcon(ftheme.FileIcon()),
 				nameLabel,
 				layout.NewSpacer(),
-				widget.NewIcon(theme.GridIcon()),
+				widget.NewIcon(ftheme.GridIcon()),
 				typeLabel,
 				layout.NewSpacer(),
 			)
@@ -76,15 +77,15 @@ func createObjectList(ctx *context.Context) fyne.CanvasObject {
 }
 
 func createSidebar(ctx *context.Context) (fyne.CanvasObject, error) {
-	settings, err := createSettingsPanel(ctx.CurrentScene)
+	settings, err := createSettingsPanel(&ctx.CurrentScene)
 	if err != nil {
 		return nil, err
 	}
 
-	return container.NewVSplit(container.NewAppTabs(
-		container.NewTabItemWithIcon("Settings", theme.SettingsIcon(), container.NewVScroll(settings)),
-		container.NewTabItemWithIcon("Object", theme.InfoIcon(), widget.NewLabel("Object Settings")),
-	), createObjectList(ctx)), nil
+	return container.NewAppTabs(
+		container.NewTabItemWithIcon("Settings", ftheme.SettingsIcon(), container.NewVScroll(settings)),
+		container.NewTabItemWithIcon("Outliner", ftheme.StorageIcon(), createObjectList(ctx)),
+	), nil
 }
 
 func createImagePreview(ctx *context.Context) fyne.CanvasObject {
@@ -105,14 +106,14 @@ func createImagePreview(ctx *context.Context) fyne.CanvasObject {
 
 func createToolbar(ctx *context.Context) fyne.CanvasObject {
 	toolbar := widget.NewToolbar(
-		widget.NewToolbarAction(theme.MediaPlayIcon(), func() {
+		widget.NewToolbarAction(ftheme.MediaPlayIcon(), func() {
 			if ctx.IsRendering {
 				return
 			}
 
 			go radia.InvokeRenderer(ctx)
 		}),
-		widget.NewToolbarAction(theme.FolderOpenIcon(), func() {
+		widget.NewToolbarAction(ftheme.FolderOpenIcon(), func() {
 
 		}),
 	)
@@ -140,6 +141,7 @@ func createMainUI(ctx *context.Context) (fyne.CanvasObject, error) {
 			preview,
 		),
 	)
+	mainSplit.SetOffset(0.25)
 
 	return container.NewBorder(
 		container.NewVBox(
@@ -157,12 +159,13 @@ func CreateUI() error {
 	imageWidth, imageHeight := 1500, 900
 
 	a := app.New()
-	a.Settings().SetTheme(theme2.AdwaitaTheme())
+	a.Settings().SetTheme(vtheme.RadiaTheme{})
 
 	ctx := &context.Context{RenderProgress: binding.NewFloat(), StatusText: binding.NewString(), Settings: context.Settings{
 		ImageWidth:  imageWidth,
 		ImageHeight: imageHeight,
 	}}
+	ctx.CurrentScene = *rscene.NewBlankScene()
 
 	w := a.NewWindow("Radia Studio")
 	w.Resize(fyne.NewSize(1500, 900))
