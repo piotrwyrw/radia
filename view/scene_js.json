@@ -28,7 +28,7 @@
               "b": 0
             },
             "brightness": 0,
-            "roughness": 0.5
+            "roughness": 0.2
           }
         }
       }
@@ -91,7 +91,7 @@
       "ior": 1,
       "azimuth": 4.71238898038469,
       "elevation": 0,
-      "intensity": 1.2
+      "intensity": 2.5
     }
   }
 }

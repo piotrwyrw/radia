@@ -161,9 +161,13 @@ func TraceRay(origin rmath.Vec3d, direction rmath.Vec3d, s *rtypes.Scene, bounce
 	mat := intersection.Object.GetMaterial().Material
 
 	clr := mat.Emitted(intersection)
+
 	scatter, attenuation := mat.Scatter(&ray, intersection)
 	if scatter == nil || bounces > maxBounces {
 		return clr
 	}
+
+	attenuation = attenuation.Clamp()
+
 	return clr.Add(attenuation.Multiply(TraceRay(intersection.Point, scatter.Direction, s, bounces+1, maxBounces)))
 }

@@ -52,6 +52,14 @@ func Gray(f float64) Color {
 	return Color{R: f, G: f, B: f}
 }
 
+func (color *Color) Clamp() Color {
+	return Color{
+		R: rmath.Clamp[float64, float64](0.0, 1.0, color.R),
+		G: rmath.Clamp[float64, float64](0.0, 1.0, color.G),
+		B: rmath.Clamp[float64, float64](0.0, 1.0, color.B),
+	}
+}
+
 func (color *Color) Add(other Color) Color {
 	return Color{
 		color.R + other.R,
@@ -85,6 +93,10 @@ func (color *Color) Multiply(other Color) Color {
 }
 
 func (color *Color) Divide(f float64) Color {
+	if f == 0.0 {
+		return ColorBlack()
+	}
+
 	return Color{
 		color.R / f,
 		color.G / f,

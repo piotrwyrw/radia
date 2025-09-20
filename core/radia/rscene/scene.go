@@ -49,7 +49,7 @@ func NewBlankScene() *rtypes.Scene {
 		},
 		WorldMat: robject.WrapEnvironmentMaterial(&rmaterial.GradientSky{
 			IOR:          1.0,
-			Intensity:    1.0,
+			Intensity:    2.0,
 			ColorHorizon: rcolor.RGB(255, 190, 118),
 			ColorSky:     rcolor.RGB(19, 15, 64),
 		}),

@@ -13,18 +13,24 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
+type SettingsSubject struct {
+	FieldValue reflect.Value
+	Object     fyne.CanvasObject
+}
+
 type SettingsPanel struct {
-	objects  map[reflect.Value]fyne.CanvasObject // Maps fields to their controls
+	objects  []SettingsSubject
 	children []*SettingsPanel
 }
 
 func (s *SettingsPanel) SetDefaultValues() {
-	for k, v := range s.objects {
-		v, ok := v.(*widget.Entry)
+	for _, obj := range s.objects {
+		w, ok := obj.Object.(*widget.Entry)
 		if !ok {
 			continue
 		}
-		v.SetText(fmt.Sprintf("%v", k.Interface()))
+
+		w.SetText(fmt.Sprintf("%v", obj.FieldValue.Interface()))
 	}
 
 	for _, child := range s.children {
@@ -145,6 +151,10 @@ func createAndBindControl(field reflect.Value) (fyne.CanvasObject, error) {
 func CreateSettingsPanel(s interface{}) (fyne.CanvasObject, *SettingsPanel, error) {
 	sValue := reflect.ValueOf(s)
 
+	if sValue.Kind() != reflect.Ptr {
+		return nil, nil, fmt.Errorf("CreateSettingsPanel expects a pointer")
+	}
+
 	if sValue.Kind() == reflect.Ptr {
 		sValue = sValue.Elem()
 	}
@@ -156,7 +166,7 @@ func CreateSettingsPanel(s interface{}) (fyne.CanvasObject, *SettingsPanel, erro
 
 	form := container.New(layout.NewFormLayout())
 
-	panel := SettingsPanel{objects: make(map[reflect.Value]fyne.CanvasObject), children: make([]*SettingsPanel, 0)}
+	panel := SettingsPanel{objects: make([]SettingsSubject, 0), children: make([]*SettingsPanel, 0)}
 
 	for i := 0; i < sType.NumField(); i++ {
 		fieldValue := sValue.Field(i)
@@ -192,13 +202,17 @@ func CreateSettingsPanel(s interface{}) (fyne.CanvasObject, *SettingsPanel, erro
 			continue
 		}
 
+		if !fieldValue.CanSet() || !fieldValue.CanAddr() {
+			continue
+		}
+
 		control, err := createAndBindControl(fieldValue)
 		if err != nil {
 			return nil, nil, err
 		}
 		form.Add(widget.NewLabel(displayName))
 		form.Add(control)
-		panel.objects[fieldValue] = control
+		panel.objects = append(panel.objects, SettingsSubject{FieldValue: fieldValue, Object: control})
 
 	}
 	return form, &panel, nil

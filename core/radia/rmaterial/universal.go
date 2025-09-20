@@ -3,6 +3,7 @@ package rmaterial
 import (
 	"encoding/json"
 
+	rmath2 "github.com/piotrwyrw/radia/internal/rmath"
 	"github.com/piotrwyrw/radia/radia/rcolor"
 	"github.com/piotrwyrw/radia/radia/rmath"
 	"github.com/piotrwyrw/radia/radia/rtypes"
@@ -28,20 +29,28 @@ func NewUniversalMaterial(color rcolor.Color, emission rcolor.Color, brightness 
 	}
 }
 
-func (e *UniversalMaterial) Scatter(incoming *rmath.Ray, intersection *rtypes.Intersection) (scattered *rmath.Ray, attenuation rcolor.Color) {
-	reflected := intersection.Object.Reflect(intersection)
+func (m *UniversalMaterial) Scatter(incoming *rmath.Ray, intersection *rtypes.Intersection) (scattered *rmath.Ray, attenuation rcolor.Color) {
+	reflectDir := intersection.Object.Reflect(intersection)
 
-	// Random direction in hemisphere
-	scatterDir := reflected.Copy()
 	rand := rmath.RandomVector()
-	rand.Multiply(e.Roughness)
+	rand.Multiply(m.Roughness)
+
+	scatterDir := reflectDir.Copy()
 	scatterDir.Add(rand)
 	scatterDir.Normalize()
 
-	return &rmath.Ray{
+	scattered = &rmath.Ray{
 		Origin:    intersection.Point.Copy(),
 		Direction: scatterDir,
-	}, e.Color
+	}
+
+	// Attenuation = base color scaled to prevent double-bright
+	attenuation = m.Color.MultiplyScalar(rmath2.Clamp[float64, float64](0.0, 1.0, 1-m.Roughness))
+
+	cosTheta := rmath2.Clamp[float64, float64](0.1, 1.0, scatterDir.Dot(intersection.Object.Normal(intersection.Point)))
+	attenuation = attenuation.MultiplyScalar(cosTheta)
+
+	return scattered, attenuation
 }
 
 func (e *UniversalMaterial) Emitted(intersection *rtypes.Intersection) rcolor.Color {
