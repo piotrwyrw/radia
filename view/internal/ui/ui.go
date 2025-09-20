@@ -8,7 +8,6 @@ import (
 	"fyne.io/fyne/v2/canvas"
 	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/data/binding"
-	"fyne.io/fyne/v2/dialog"
 	"fyne.io/fyne/v2/layout"
 	ftheme "fyne.io/fyne/v2/theme"
 	"fyne.io/fyne/v2/widget"
@@ -17,7 +16,6 @@ import (
 	"github.com/piotrwyrw/otherproj/internal/state"
 	"github.com/piotrwyrw/otherproj/internal/ui/vtheme"
 	"github.com/piotrwyrw/radia/radia/rscene"
-	"github.com/sirupsen/logrus"
 )
 
 func createSeparatorLine() *canvas.Line {
@@ -106,31 +104,10 @@ func createToolbar(state *state.State) fyne.CanvasObject {
 			go radia.InvokeRenderer(state)
 		}),
 		widget.NewToolbarAction(ftheme.FolderOpenIcon(), func() {
-			go func() {
-				window := fyne.CurrentApp().Driver().AllWindows()[0]
-				d := dialog.NewFileOpen(func(read fyne.URIReadCloser, e error) {
-					if e != nil {
-						logrus.Errorf("Could not open scene file: %v\n", e)
-						return
-					}
-
-					if read == nil {
-						return
-					}
-
-					scene, err := rscene.LoadSceneJSON(read.URI().Path())
-					if err != nil {
-						logrus.Errorf("Could not load scene file: %v\n", err)
-						return
-					}
-					state.Context.CurrentScene = *scene
-					state.Settings.SetDefaultValues()
-				}, window)
-				d.Resize(window.Canvas().Size())
-				fyne.Do(func() {
-					d.Show()
-				})
-			}()
+			go showSceneOpenDialog(state)
+		}),
+		widget.NewToolbarAction(ftheme.DocumentSaveIcon(), func() {
+			go showSceneSaveDialog(state)
 		}),
 	)
 

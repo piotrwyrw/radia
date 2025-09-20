@@ -30,9 +30,7 @@ func parseShapeWrapper(data []byte, dst *rtypes.ShapeWrapper, registry *rregistr
 	if err != nil {
 		return err
 	}
-	err = s.Unmarshal(aux.Object, func(data []byte, dst *rtypes.ShapeMaterialWrapper) error {
-		return parseShapeMaterialWrapper(data, dst, registry)
-	})
+	err = s.Unmarshal(aux.Object)
 
 	if err != nil {
 		return err
@@ -114,10 +112,11 @@ func parseEnvironmentMaterialWrapper(data []byte, dst *rtypes.EnvironmentMateria
 
 func ParseScene(data []byte, registry *rregistry.CentralRegistry) (*rtypes.Scene, error) {
 	var aux struct {
-		Metadata rtypes.SceneMetadata `json:"metadata"`
-		Objects  []json.RawMessage    `json:"objects"`
-		Camera   rtypes.Camera        `json:"camera"`
-		WorldMat json.RawMessage      `json:"world"`
+		Metadata  rtypes.SceneMetadata `json:"metadata"`
+		Materials []json.RawMessage    `json:"materials"`
+		Objects   []json.RawMessage    `json:"objects"`
+		Camera    rtypes.Camera        `json:"camera"`
+		WorldMat  json.RawMessage      `json:"world"`
 	}
 	err := json.Unmarshal(data, &aux)
 	if err != nil {
@@ -127,6 +126,16 @@ func ParseScene(data []byte, registry *rregistry.CentralRegistry) (*rtypes.Scene
 	var scene rtypes.Scene
 	scene.Metadata = aux.Metadata
 	scene.Camera = aux.Camera
+
+	// Parse materials
+	for _, mat := range aux.Materials {
+		var parsed rtypes.ShapeMaterialWrapper
+		err := parseShapeMaterialWrapper(mat, &parsed, registry)
+		if err != nil {
+			return nil, err
+		}
+		scene.Materials = append(scene.Materials, parsed)
+	}
 
 	// Parse world material
 	err = parseEnvironmentMaterialWrapper(aux.WorldMat, &scene.WorldMat, registry)

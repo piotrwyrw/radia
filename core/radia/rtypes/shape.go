@@ -10,9 +10,9 @@ type Shape interface {
 	Hit(ray *rmath.Ray) *Intersection
 	Normal(at rmath.Vec3d) rmath.Vec3d
 	Reflect(intersection *Intersection) rmath.Vec3d
-	GetMaterial() ShapeMaterialWrapper
+	GetMaterial() int32
 	Identifier() string
-	Unmarshal(data []byte, fParseShapeMaterial func(data []byte, dst *ShapeMaterialWrapper) error) error
+	Unmarshal(data []byte) error
 }
 
 type ShapeWrapper struct {

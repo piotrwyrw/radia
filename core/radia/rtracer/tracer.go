@@ -158,7 +158,7 @@ func TraceRay(origin rmath.Vec3d, direction rmath.Vec3d, s *rtypes.Scene, bounce
 		return s.WorldMat.Material.SkyColor(&direction)
 	}
 
-	mat := intersection.Object.GetMaterial().Material
+	mat := s.Materials[intersection.Object.GetMaterial()].Material
 
 	clr := mat.Emitted(intersection)
 

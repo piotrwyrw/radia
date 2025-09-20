@@ -3,6 +3,44 @@
     "title": "",
     "author": ""
   },
+  "materials": [
+    {
+      "type": "shape",
+      "name": "radia.universal",
+      "material": {
+        "color": {
+          "r": 0.1,
+          "g": 0.6,
+          "b": 0.3
+        },
+        "emission": {
+          "r": 0,
+          "g": 0,
+          "b": 0
+        },
+        "brightness": 0,
+        "roughness": 0.2
+      }
+    },
+    {
+      "type": "shape",
+      "name": "radia.universal",
+      "material": {
+        "color": {
+          "r": 1,
+          "g": 1,
+          "b": 1
+        },
+        "emission": {
+          "r": 1,
+          "g": 1,
+          "b": 1
+        },
+        "brightness": 3,
+        "roughness": 10
+      }
+    }
+  ],
   "objects": [
     {
       "type": "sphere",
@@ -13,24 +51,7 @@
           "z": 2
         },
         "radius": 0.2,
-        "material": {
-          "type": "shape",
-          "name": "radia.universal",
-          "material": {
-            "color": {
-              "r": 0.1,
-              "g": 0.6,
-              "b": 0.3
-            },
-            "emission": {
-              "r": 0,
-              "g": 0,
-              "b": 0
-            },
-            "brightness": 0,
-            "roughness": 0.2
-          }
-        }
+        "material": 0
       }
     },
     {
@@ -42,24 +63,7 @@
           "z": 2
         },
         "radius": 0.1,
-        "material": {
-          "type": "shape",
-          "name": "radia.universal",
-          "material": {
-            "color": {
-              "r": 1,
-              "g": 1,
-              "b": 1
-            },
-            "emission": {
-              "r": 1,
-              "g": 1,
-              "b": 1
-            },
-            "brightness": 3,
-            "roughness": 10
-          }
-        }
+        "material": 1
       }
     }
   ],

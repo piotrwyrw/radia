@@ -30,16 +30,19 @@ func NewBlankScene() *rtypes.Scene {
 			Title:  "New Project",
 			Author: name,
 		},
+		Materials: []rtypes.ShapeMaterialWrapper{
+			robject.WrapShapeMaterial(&rmaterial.UniversalMaterial{
+				Color:      rcolor.RGB(244, 162, 137),
+				Emission:   rcolor.ColorBlack(),
+				Brightness: 0.0,
+				Roughness:  0,
+			}),
+		},
 		Objects: []rtypes.ShapeWrapper{
 			robject.WrapShape(&rshapes.Sphere{
-				Center: rmath.Vec(0, 0, 2),
-				Radius: 0.5,
-				Material: robject.WrapShapeMaterial(&rmaterial.UniversalMaterial{
-					Color:      rcolor.RGB(244, 162, 137),
-					Emission:   rcolor.ColorBlack(),
-					Brightness: 0.0,
-					Roughness:  0,
-				}),
+				Center:   rmath.Vec(0, 0, 2),
+				Radius:   0.5,
+				Material: 0,
 			}),
 		},
 		Camera: rtypes.Camera{

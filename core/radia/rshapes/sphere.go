@@ -10,16 +10,16 @@ import (
 )
 
 type Sphere struct {
-	Center   rmath.Vec3d                 `json:"center"`
-	Radius   float64                     `json:"radius"`
-	Material rtypes.ShapeMaterialWrapper `json:"material"`
+	Center   rmath.Vec3d `json:"center"`
+	Radius   float64     `json:"radius"`
+	Material int32       `json:"material"`
 }
 
-func (s *Sphere) Unmarshal(data []byte, fParseShapeMaterial func(data []byte, dst *rtypes.ShapeMaterialWrapper) error) error {
+func (s *Sphere) Unmarshal(data []byte) error {
 	var aux struct {
-		Center   rmath.Vec3d     `json:"center"`
-		Radius   float64         `json:"radius"`
-		Material json.RawMessage `json:"material"`
+		Center   rmath.Vec3d `json:"center"`
+		Radius   float64     `json:"radius"`
+		Material int32       `json:"material"`
 	}
 
 	err := json.Unmarshal(data, &aux)
@@ -29,11 +29,7 @@ func (s *Sphere) Unmarshal(data []byte, fParseShapeMaterial func(data []byte, ds
 
 	s.Center = aux.Center
 	s.Radius = aux.Radius
-
-	err = fParseShapeMaterial(aux.Material, &s.Material)
-	if err != nil {
-		return err
-	}
+	s.Material = aux.Material
 
 	return nil
 }
@@ -95,7 +91,7 @@ func (s *Sphere) Reflect(intersection *rtypes.Intersection) rmath.Vec3d {
 	return reflected
 }
 
-func (s *Sphere) GetMaterial() rtypes.ShapeMaterialWrapper {
+func (s *Sphere) GetMaterial() int32 {
 	return s.Material
 }
 
