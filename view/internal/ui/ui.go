@@ -13,6 +13,7 @@ import (
 	"fyne.io/fyne/v2/widget"
 	"github.com/piotrwyrw/otherproj/internal/cfgui"
 	"github.com/piotrwyrw/otherproj/internal/radia"
+	"github.com/piotrwyrw/otherproj/internal/reactive"
 	"github.com/piotrwyrw/otherproj/internal/state"
 	"github.com/piotrwyrw/otherproj/internal/ui/vtheme"
 	"github.com/piotrwyrw/radia/radia/rscene"
@@ -35,6 +36,15 @@ func createStatusBar(state *state.State) *fyne.Container {
 	rect.SetMinSize(fyne.NewSize(400, 0))
 	progress := widget.NewProgressBarWithData(state.RenderProgress)
 	progressContainer := container.NewStack(rect, progress)
+
+	progress.Hide()
+	state.IsRendering.ObserveFyne(func(newValue bool) {
+		if newValue {
+			progress.Show()
+		} else {
+			progress.Hide()
+		}
+	})
 
 	statusBar := container.NewVBox(
 		createSeparatorLine(),
@@ -72,6 +82,10 @@ func createObjectList(state *state.State) fyne.CanvasObject {
 			objects[5].(*widget.Label).SetText(state.Context.CurrentScene.Objects[i].Type)
 		})
 
+	state.SceneChanged.Observe(func() {
+		objectList.Refresh()
+	})
+
 	return objectList
 }
 
@@ -83,10 +97,12 @@ func createSidebar(state *state.State) (fyne.CanvasObject, error) {
 
 	state.Settings = panel
 
-	return container.NewAppTabs(
+	tabs := container.NewAppTabs(
 		container.NewTabItemWithIcon("Settings", ftheme.SettingsIcon(), container.NewVScroll(settings)),
-		container.NewTabItemWithIcon("Outliner", ftheme.StorageIcon(), createObjectList(state)),
-	), nil
+		container.NewTabItemWithIcon("Objects", ftheme.StorageIcon(), createObjectList(state)),
+	)
+
+	return tabs, nil
 }
 
 func createImagePreview(state *state.State) fyne.CanvasObject {
@@ -95,21 +111,39 @@ func createImagePreview(state *state.State) fyne.CanvasObject {
 }
 
 func createToolbar(state *state.State) fyne.CanvasObject {
-	toolbar := widget.NewToolbar(
-		widget.NewToolbarAction(ftheme.MediaPlayIcon(), func() {
-			if state.IsRendering {
-				return
-			}
+	renderAction := widget.NewToolbarAction(ftheme.MediaPlayIcon(), func() {
+		if state.IsRendering.Get() {
+			return
+		}
 
-			go radia.InvokeRenderer(state)
-		}),
-		widget.NewToolbarAction(ftheme.FolderOpenIcon(), func() {
-			go showSceneOpenDialog(state)
-		}),
-		widget.NewToolbarAction(ftheme.DocumentSaveIcon(), func() {
-			go showSceneSaveDialog(state)
-		}),
-	)
+		go radia.InvokeRenderer(state)
+	})
+
+	openAction := widget.NewToolbarAction(ftheme.FolderOpenIcon(), func() {
+		go showSceneOpenDialog(state)
+	})
+
+	saveAction := widget.NewToolbarAction(ftheme.DocumentSaveIcon(), func() {
+		go showSceneSaveDialog(state)
+	})
+
+	saveImageAction := widget.NewToolbarAction(ftheme.FileImageIcon(), func() {
+		go showImageSaveDialog(state)
+	})
+
+	actions := []*widget.ToolbarAction{renderAction, openAction, saveAction, saveImageAction}
+
+	state.IsRendering.ObserveFyne(func(newValue bool) {
+		for _, action := range actions {
+			if newValue {
+				action.Disable()
+			} else {
+				action.Enable()
+			}
+		}
+	})
+
+	toolbar := widget.NewToolbar(renderAction, openAction, saveAction, saveImageAction)
 
 	return toolbar
 }
@@ -134,6 +168,7 @@ func createMainUI(state *state.State) (fyne.CanvasObject, error) {
 		preview,
 	)
 
+	// TODO Replace with ObservableValue
 	state.PreviewImage.OnUpdate = func(img *canvas.Image) {
 		borderContainer.Objects[0] = img
 	}
@@ -161,21 +196,33 @@ func CreateUI() error {
 	imageWidth, imageHeight := 1500, 900
 
 	a := app.NewWithID("view.master")
-	a.Settings().SetTheme(vtheme.RadiaTheme{})
 
-	s := &state.State{RenderProgress: binding.NewFloat(), StatusText: binding.NewString(), Context: state.RenderContext{
-		Settings: state.RenderSettings{
-			Samples:     10,
-			MaxBounces:  100,
-			Threads:     0,
-			ImageWidth:  imageWidth,
-			ImageHeight: imageHeight,
-		},
-	}}
-	s.Context.CurrentScene = *rscene.NewBlankScene()
+	theme := vtheme.RadiaTheme{
+		Fallback: a.Settings().Theme(),
+	}
+
+	a.Settings().SetTheme(theme)
 
 	w := a.NewWindow("Radia Studio")
 	w.Resize(fyne.NewSize(1500, 900))
+
+	s := &state.State{
+		MainWindow:     w,
+		RenderProgress: binding.NewFloat(),
+		StatusText:     binding.NewString(),
+		SceneChanged:   reactive.NewSignal(),
+		Context: state.RenderContext{
+			Settings: state.RenderSettings{
+				Samples:     10,
+				MaxBounces:  100,
+				Threads:     0,
+				ImageWidth:  imageWidth,
+				ImageHeight: imageHeight,
+			},
+		},
+		IsRendering: reactive.NewObservableValue(false),
+	}
+	s.Context.CurrentScene = *rscene.NewBlankScene()
 
 	ui, err := createMainUI(s)
 	if err != nil {

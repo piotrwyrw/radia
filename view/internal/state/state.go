@@ -1,9 +1,11 @@
 package state
 
 import (
+	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/data/binding"
 	"fyne.io/fyne/v2/widget"
 	"github.com/piotrwyrw/otherproj/internal/cfgui"
+	"github.com/piotrwyrw/otherproj/internal/reactive"
 	"github.com/piotrwyrw/otherproj/internal/types"
 	"github.com/piotrwyrw/radia/radia/rtypes"
 )
@@ -22,14 +24,17 @@ type RenderContext struct {
 }
 
 type State struct {
+	MainWindow fyne.Window
+
 	RenderProgress binding.Float
 
 	StatusLabel *widget.Label
 	StatusText  binding.String
 
 	PreviewImage types.PreviewImage
-	IsRendering  bool
+	IsRendering  *reactive.ObservableValue[bool]
 
-	Context  RenderContext
-	Settings *cfgui.SettingsPanel
+	SceneChanged *reactive.Signal
+	Context      RenderContext
+	Settings     *cfgui.SettingsPanel
 }

@@ -7,8 +7,10 @@ import (
 
 const SkyMaterialIdentifier = "radia.sky"
 const GradientSkyMaterialIdentifier = "radia.gradient_sky"
+const NormalMaterialIdentifier = "radia.normal"
 const GlassMaterialIdentifier = "radia.glass"
 const UniversalMaterialIdentifier = "radia.universal"
+const MirrorMaterialIdentifier = "radia.mirror"
 
 const EnvironmentWrapperType = "environment"
 const ShapeWrapperType = "shape"

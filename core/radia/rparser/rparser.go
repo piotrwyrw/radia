@@ -3,10 +3,13 @@ package rparser
 import (
 	"encoding/json"
 	"fmt"
+	"os"
 
 	"github.com/piotrwyrw/radia/radia/robject"
 	"github.com/piotrwyrw/radia/radia/rregistry"
+	"github.com/piotrwyrw/radia/radia/rscene"
 	"github.com/piotrwyrw/radia/radia/rtypes"
+	"github.com/sirupsen/logrus"
 )
 
 func parseShapeWrapper(data []byte, dst *rtypes.ShapeWrapper, registry *rregistry.CentralRegistry) error {
@@ -112,11 +115,11 @@ func parseEnvironmentMaterialWrapper(data []byte, dst *rtypes.EnvironmentMateria
 
 func ParseScene(data []byte, registry *rregistry.CentralRegistry) (*rtypes.Scene, error) {
 	var aux struct {
-		Metadata  rtypes.SceneMetadata `json:"metadata"`
-		Materials []json.RawMessage    `json:"materials"`
-		Objects   []json.RawMessage    `json:"objects"`
-		Camera    rtypes.Camera        `json:"camera"`
-		WorldMat  json.RawMessage      `json:"world"`
+		Metadata  rtypes.SceneMetadata      `json:"metadata"`
+		Materials map[int32]json.RawMessage `json:"materials"`
+		Objects   []json.RawMessage         `json:"objects"`
+		Camera    rtypes.Camera             `json:"camera"`
+		WorldMat  json.RawMessage           `json:"world"`
 	}
 	err := json.Unmarshal(data, &aux)
 	if err != nil {
@@ -126,15 +129,22 @@ func ParseScene(data []byte, registry *rregistry.CentralRegistry) (*rtypes.Scene
 	var scene rtypes.Scene
 	scene.Metadata = aux.Metadata
 	scene.Camera = aux.Camera
+	scene.Materials = make(map[int32]rtypes.ShapeMaterialWrapper, len(aux.Materials))
 
 	// Parse materials
-	for _, mat := range aux.Materials {
+	for id, mat := range aux.Materials {
 		var parsed rtypes.ShapeMaterialWrapper
 		err := parseShapeMaterialWrapper(mat, &parsed, registry)
 		if err != nil {
 			return nil, err
 		}
-		scene.Materials = append(scene.Materials, parsed)
+
+		// This will probably never happen. Unmarshalling doesn't preserve duplicate map entries
+		if rscene.SceneMaterialExists(&scene, id) {
+			return nil, fmt.Errorf("duplicate shape material: %d", id)
+		}
+
+		scene.Materials[id] = parsed
 	}
 
 	// Parse world material
@@ -150,8 +160,25 @@ func ParseScene(data []byte, registry *rregistry.CentralRegistry) (*rtypes.Scene
 		if err != nil {
 			return nil, err
 		}
+		matId := shape.Object.GetMaterial()
+		if !rscene.SceneMaterialExists(&scene, matId) {
+			return nil, fmt.Errorf("shape references unknown material: %d", matId)
+		}
 		scene.Objects = append(scene.Objects, shape)
 	}
 
 	return &scene, nil
+}
+
+func LoadSceneJSON(path string) (*rtypes.Scene, error) {
+	logrus.Debugf("Loading scene file \"%s\"\n", path)
+	data, err := os.ReadFile(path)
+	if err != nil {
+		return nil, err
+	}
+	scene, err := ParseScene(data, rregistry.GetCentralRegistry())
+	if err != nil {
+		return nil, err
+	}
+	return scene, nil
 }

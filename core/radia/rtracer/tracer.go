@@ -134,6 +134,10 @@ func TraceAllRays(scene *rtypes.Scene, raster *rimg.Raster, pixelSamples int, ma
 	wg.Wait()
 	close(progressSig)
 
+	logrus.Infof("Applying Gamma correction")
+
+	raster.CorrectGamma(2.2)
+
 	logrus.Info("Render job complete.")
 }
 
@@ -158,7 +162,13 @@ func TraceRay(origin rmath.Vec3d, direction rmath.Vec3d, s *rtypes.Scene, bounce
 		return s.WorldMat.Material.SkyColor(&direction)
 	}
 
-	mat := s.Materials[intersection.Object.GetMaterial()].Material
+	matIndex := intersection.Object.GetMaterial()
+	wrapper, ok := s.Materials[matIndex]
+	if !ok {
+		logrus.Errorf("Referenced material index %d does not exist.", matIndex)
+		return rcolor.ColorBlack()
+	}
+	mat := wrapper.Material
 
 	clr := mat.Emitted(intersection)
 

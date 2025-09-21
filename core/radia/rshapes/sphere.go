@@ -10,16 +10,16 @@ import (
 )
 
 type Sphere struct {
-	Center   rmath.Vec3d `json:"center"`
-	Radius   float64     `json:"radius"`
-	Material int32       `json:"material"`
+	Center     rmath.Vec3d `json:"center"`
+	Radius     float64     `json:"radius"`
+	MaterialId int32       `json:"material_id"`
 }
 
 func (s *Sphere) Unmarshal(data []byte) error {
 	var aux struct {
 		Center   rmath.Vec3d `json:"center"`
 		Radius   float64     `json:"radius"`
-		Material int32       `json:"material"`
+		Material int32       `json:"material_id"`
 	}
 
 	err := json.Unmarshal(data, &aux)
@@ -29,7 +29,7 @@ func (s *Sphere) Unmarshal(data []byte) error {
 
 	s.Center = aux.Center
 	s.Radius = aux.Radius
-	s.Material = aux.Material
+	s.MaterialId = aux.Material
 
 	return nil
 }
@@ -92,7 +92,7 @@ func (s *Sphere) Reflect(intersection *rtypes.Intersection) rmath.Vec3d {
 }
 
 func (s *Sphere) GetMaterial() int32 {
-	return s.Material
+	return s.MaterialId
 }
 
 func (s *Sphere) Identifier() string {

@@ -3,6 +3,8 @@ package rmath
 import (
 	"math"
 	"math/rand"
+
+	"github.com/piotrwyrw/radia/internal/rmath"
 )
 
 type Vec3d struct {
@@ -18,11 +20,25 @@ func Vec(x, y, z float64) Vec3d {
 func RandomVector() Vec3d {
 	for {
 		v := Vec3d{
-			X: 2*rand.Float64() - 1,
-			Y: 2*rand.Float64() - 1,
-			Z: 2*rand.Float64() - 1,
+			X: (2 * rand.Float64()) - 1,
+			Y: (2 * rand.Float64()) - 1,
+			Z: (2 * rand.Float64()) - 1,
 		}
 		if v.LengthSq() < 1 {
+			v.Normalize()
+			return v
+		}
+	}
+}
+func RandomVectorOnHemisphere(normal *Vec3d) Vec3d {
+	for {
+		v := Vec3d{
+			X: (2 * rand.Float64()) - 1,
+			Y: (2 * rand.Float64()) - 1,
+			Z: (2 * rand.Float64()) - 1,
+		}
+		if rmath.EPSILON < v.LengthSq() && v.LengthSq() < 1 && normal.Dot(v) > 0 {
+			v.Normalize()
 			return v
 		}
 	}

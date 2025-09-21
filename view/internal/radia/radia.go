@@ -16,7 +16,7 @@ func InvokeRenderer(state *state.State) {
 	}
 
 	state.StatusText.Set("Rendering ...")
-	state.IsRendering = true
+	state.IsRendering.Set(true)
 	state.RenderProgress.Set(0.0)
 
 	state.PreviewImage.Create(state.Context.Settings.ImageWidth, state.Context.Settings.ImageHeight)
@@ -42,8 +42,8 @@ func InvokeRenderer(state *state.State) {
 		})
 	renderEnd := time.Now().UnixMilli()
 
-	state.StatusText.Set(fmt.Sprintf("Done (%d ms).", renderEnd-renderStart))
-	state.IsRendering = false
+	state.StatusText.Set(fmt.Sprintf("Done (%d ms)", renderEnd-renderStart))
+	state.IsRendering.Set(false)
 	state.RenderProgress.Set(0.0)
 	state.PreviewImage.Update(rendered)
 }

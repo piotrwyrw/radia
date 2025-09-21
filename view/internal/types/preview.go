@@ -13,6 +13,7 @@ import (
 type PreviewImage struct {
 	ImageBuffer *image.RGBA
 	ImageWidget *canvas.Image
+	Raster      *rimg.Raster
 	OnUpdate    func(img *canvas.Image)
 }
 
@@ -21,7 +22,7 @@ func (img *PreviewImage) Create(width, height int) {
 
 	for x := 0; x < width; x++ {
 		for y := 0; y < height; y++ {
-			img.ImageBuffer.Set(x, y, color.Gray{Y: 30})
+			img.ImageBuffer.Set(x, y, color.Gray{Y: 20})
 		}
 	}
 
@@ -41,5 +42,6 @@ func (img *PreviewImage) Refresh() {
 
 func (img *PreviewImage) Update(data *rimg.Raster) {
 	util.UpdateFyneImageWithRaster(data, img.ImageBuffer)
+	img.Raster = data
 	img.Refresh()
 }

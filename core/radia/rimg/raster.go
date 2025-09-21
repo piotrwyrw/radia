@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"image/png"
+	"math"
 	"os"
 	"path/filepath"
 	"strings"
@@ -17,6 +18,24 @@ type Raster struct {
 	Height int32          `json:"-"`
 	Pixels []rcolor.Color `json:"-"`
 	Source string         `json:"source"`
+}
+
+func gammaCorrect(component float64, gamma float64) float64 {
+	if component == 0.0 {
+		return component
+	}
+
+	return math.Pow(component, 1.0/gamma)
+}
+
+func (r *Raster) CorrectGamma(gamma float64) {
+	for i, px := range r.Pixels {
+		r.Pixels[i] = rcolor.Color{
+			R: gammaCorrect(px.R, gamma),
+			G: gammaCorrect(px.G, gamma),
+			B: gammaCorrect(px.B, gamma),
+		}
+	}
 }
 
 func (r *Raster) UnmarshalJSON(data []byte) error {

@@ -21,13 +21,15 @@ var registryOnce sync.Once = sync.Once{}
 var globalMatRegistry CentralRegistry
 
 func registerBuiltinMaterials() {
-	// Shape Material
+	// Shape MaterialId
+	_ = globalMatRegistry.Register(rtypes.NormalMaterialIdentifier, reflect.TypeOf(&rmaterial.MirrorMaterial{}))
 	_ = globalMatRegistry.Register(rtypes.UniversalMaterialIdentifier, reflect.TypeOf(&rmaterial.UniversalMaterial{}))
 	_ = globalMatRegistry.Register(rtypes.GlassMaterialIdentifier, reflect.TypeOf(&rmaterial.GlassMaterial{}))
+	_ = globalMatRegistry.Register(rtypes.MirrorMaterialIdentifier, reflect.TypeOf(&rmaterial.MirrorMaterial{}))
 
-	// Environment Material
+	// Environment MaterialId
 	_ = globalMatRegistry.Register(rtypes.SkyMaterialIdentifier, reflect.TypeOf(&rmaterial.Sky{}))
-	_ = globalMatRegistry.Register(rtypes.GradientSkyMaterialIdentifier, reflect.TypeOf(&rmaterial.GradientSky{}))
+	_ = globalMatRegistry.Register(rtypes.GradientSkyMaterialIdentifier, reflect.TypeOf(&rmaterial.MirrorMaterial{}))
 
 	// Shapes
 	_ = globalMatRegistry.Register(rtypes.ShapeIdentifierSphere, reflect.TypeOf(&rshapes.Sphere{}))

@@ -155,9 +155,8 @@ func CreateSettingsPanel(s interface{}) (fyne.CanvasObject, *SettingsPanel, erro
 		return nil, nil, fmt.Errorf("CreateSettingsPanel expects a pointer")
 	}
 
-	if sValue.Kind() == reflect.Ptr {
-		sValue = sValue.Elem()
-	}
+	sValue = sValue.Elem()
+	
 	if sValue.Kind() != reflect.Struct {
 		return nil, nil, fmt.Errorf("expected struct got %T", s)
 	}
