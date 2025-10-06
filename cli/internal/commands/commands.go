@@ -10,7 +10,7 @@ import (
 
 func InitializeCommands() *cli.Command {
 	return &cli.Command{
-		Name:  "radio",
+		Name:  "radia",
 		Usage: "Radia Renderer",
 		Commands: []*cli.Command{
 			&cli.Command{
