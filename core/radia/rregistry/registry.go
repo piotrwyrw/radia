@@ -29,7 +29,7 @@ func registerBuiltinMaterials() {
 
 	// Environment MaterialId
 	_ = globalMatRegistry.Register(rtypes.SkyMaterialIdentifier, reflect.TypeOf(&rmaterial.Sky{}))
-	_ = globalMatRegistry.Register(rtypes.GradientSkyMaterialIdentifier, reflect.TypeOf(&rmaterial.MirrorMaterial{}))
+	_ = globalMatRegistry.Register(rtypes.GradientSkyMaterialIdentifier, reflect.TypeOf(&rmaterial.GradientSky{}))
 
 	// Shapes
 	_ = globalMatRegistry.Register(rtypes.ShapeIdentifierSphere, reflect.TypeOf(&rshapes.Sphere{}))

@@ -24,7 +24,7 @@ func (rt RadiaTheme) Color(name fyne.ThemeColorName, variant fyne.ThemeVariant) 
 	case ftheme.ColorNameError:
 		return rgb(231, 76, 60)
 	case ftheme.ColorNamePrimary:
-		return rgb(0, 200, 255)
+		return rgb(0, 180, 60)
 	case ftheme.ColorNameShadow:
 		return rgb(0, 0, 0)
 	case ftheme.ColorNameInputBackground:

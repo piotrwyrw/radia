@@ -44,7 +44,7 @@ func (m *UniversalMaterial) Scatter(incoming *rmath.Ray, intersection *rtypes.In
 	}
 
 	att := m.Color
-	att.MultiplyScalar(0.8)
+	att.MultiplyScalar(0.9)
 
 	return scattered, att
 }

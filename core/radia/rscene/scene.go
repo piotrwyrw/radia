@@ -17,7 +17,7 @@ import (
 	"github.com/piotrwyrw/radia/radia/rtypes"
 )
 
-func NewBlankScene() *rtypes.Scene {
+func NewTestScene() *rtypes.Scene {
 	u, err := user.Current()
 	var name string
 	if err != nil {
@@ -31,26 +31,46 @@ func NewBlankScene() *rtypes.Scene {
 			Author: name,
 		},
 		Materials: map[int32]rtypes.ShapeMaterialWrapper{
+			// Red
 			0: robject.WrapShapeMaterial(&rmaterial.UniversalMaterial{
-				Color:      rcolor.ColorWhite(),
+				Color:      rcolor.RGB(255, 43, 43),
 				Emission:   rcolor.ColorBlack(),
 				Brightness: 0.0,
 				Roughness:  0.5,
 			}),
-			//1: robject.WrapShapeMaterial(&rmaterial.NormalMaterial{
-			//	Brightness: 1.0,
-			//}),
+
+			// Blue
 			1: robject.WrapShapeMaterial(&rmaterial.UniversalMaterial{
+				Color:      rcolor.RGB(2, 75, 247),
+				Emission:   rcolor.ColorBlack(),
+				Brightness: 0.0,
+				Roughness:  0.5,
+			}),
+
+			// White
+			2: robject.WrapShapeMaterial(&rmaterial.UniversalMaterial{
+				Color:      rcolor.RGB(255, 255, 255),
+				Emission:   rcolor.ColorBlack(),
+				Brightness: 0.0,
+				Roughness:  0.5,
+			}),
+
+			// Lamp
+			3: robject.WrapShapeMaterial(&rmaterial.UniversalMaterial{
 				Color:      rcolor.ColorBlack(),
 				Emission:   rcolor.ColorWhite(),
-				Brightness: 1,
-				Roughness:  0.0,
+				Brightness: 2,
+				Roughness:  100.0,
 			}),
-			2: robject.WrapShapeMaterial(&rmaterial.MirrorMaterial{
-				Color: rcolor.RGB(162, 155, 254),
+
+			// Red Mirror
+			4: robject.WrapShapeMaterial(&rmaterial.MirrorMaterial{
+				Color: rcolor.RGB(255, 43, 43),
 			}),
-			3: robject.WrapShapeMaterial(&rmaterial.MirrorMaterial{
-				Color: rcolor.RGB(46, 204, 113),
+
+			// Blue Mirror
+			5: robject.WrapShapeMaterial(&rmaterial.MirrorMaterial{
+				Color: rcolor.RGB(2, 75, 247),
 			}),
 		},
 		Objects: []rtypes.ShapeWrapper{
@@ -58,14 +78,14 @@ func NewBlankScene() *rtypes.Scene {
 			robject.WrapShape(&rshapes.Sphere{
 				Center:     rmath.Vec(0, -10000.0, 0),
 				Radius:     10000.0,
-				MaterialId: 0,
+				MaterialId: 2,
 			}),
 
 			// Ceiling
 			robject.WrapShape(&rshapes.Sphere{
 				Center:     rmath.Vec(0, 10000.0+1, 0),
 				Radius:     10000.0,
-				MaterialId: 0,
+				MaterialId: 2,
 			}),
 
 			// Left Wall
@@ -79,35 +99,35 @@ func NewBlankScene() *rtypes.Scene {
 			robject.WrapShape(&rshapes.Sphere{
 				Center:     rmath.Vec(-10000-0.5, 0.5, 0),
 				Radius:     10000,
-				MaterialId: 0,
+				MaterialId: 1,
 			}),
 
 			// Back Wall
 			robject.WrapShape(&rshapes.Sphere{
 				Center:     rmath.Vec(0, 0, 10000+1.5),
 				Radius:     10000,
-				MaterialId: 0,
+				MaterialId: 2,
 			}),
 
 			// Lamp
 			robject.WrapShape(&rshapes.Sphere{
-				Center:     rmath.Vec(0.0, 1.0, 1.0),
+				Center:     rmath.Vec(0.0, 1, 1.0),
 				Radius:     0.2,
-				MaterialId: 1,
+				MaterialId: 3,
 			}),
 
 			// Mirror
 			robject.WrapShape(&rshapes.Sphere{
 				Center:     rmath.Vec(0.2, 0.3, 1.0),
 				Radius:     0.1,
-				MaterialId: 2,
+				MaterialId: 5,
 			}),
 
 			// Mirror
 			robject.WrapShape(&rshapes.Sphere{
 				Center:     rmath.Vec(-.2, 0.3, 1.0),
 				Radius:     0.1,
-				MaterialId: 3,
+				MaterialId: 4,
 			}),
 		},
 		Camera: rtypes.Camera{
@@ -121,11 +141,14 @@ func NewBlankScene() *rtypes.Scene {
 			ColorSky:     rcolor.RGB(217, 231, 255),
 			ColorHorizon: rcolor.RGB(255, 255, 255),
 		}),
+		PostProcessing: rtypes.PostProcessing{
+			Gamma: 2.0,
+		},
 	}
 	return scene
 }
 
-func NewRandomTestScene() *rtypes.Scene {
+func NewRandomSpheresTestScene() *rtypes.Scene {
 	u, err := user.Current()
 	var name string
 	if err != nil {
@@ -195,6 +218,9 @@ func NewRandomTestScene() *rtypes.Scene {
 			Intensity: 0.2,
 			Azimuth:   -2,
 		}),
+		PostProcessing: rtypes.PostProcessing{
+			Gamma: 2.0,
+		},
 	}
 
 	return scene

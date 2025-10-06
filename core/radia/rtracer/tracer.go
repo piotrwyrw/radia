@@ -136,7 +136,7 @@ func TraceAllRays(scene *rtypes.Scene, raster *rimg.Raster, pixelSamples int, ma
 
 	logrus.Infof("Applying Gamma correction")
 
-	raster.CorrectGamma(2.2)
+	raster.CorrectGamma(scene.PostProcessing.Gamma)
 
 	logrus.Info("Render job complete.")
 }

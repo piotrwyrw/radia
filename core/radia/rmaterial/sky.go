@@ -41,7 +41,6 @@ func (sky *Sky) SkyColor(direction *rmath.Vec3d) rcolor.Color {
 	}
 
 	elevation := math.Acos(d.Y) + sky.Elevation
-
 	u := (0.5 + azimuth/(math.Pi*2)) * float64(sky.Image.Width)
 	v := (elevation / math.Pi) * float64(sky.Image.Height)
 

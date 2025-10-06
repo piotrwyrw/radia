@@ -205,6 +205,7 @@ func CreateUI() error {
 
 	w := a.NewWindow("Radia Studio")
 	w.Resize(fyne.NewSize(1500, 900))
+	w.SetTitle("Radia Studio")
 
 	s := &state.State{
 		MainWindow:     w,
@@ -222,7 +223,7 @@ func CreateUI() error {
 		},
 		IsRendering: reactive.NewObservableValue(false),
 	}
-	s.Context.CurrentScene = *rscene.NewBlankScene()
+	s.Context.CurrentScene = *rscene.NewTestScene()
 
 	ui, err := createMainUI(s)
 	if err != nil {
